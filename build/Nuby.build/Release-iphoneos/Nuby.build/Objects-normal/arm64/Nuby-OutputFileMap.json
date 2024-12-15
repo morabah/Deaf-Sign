@@ -1,0 +1,95 @@
+{
+  "" : {
+    "const-values" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master.swiftconstvalues",
+    "dependencies" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master.d",
+    "diagnostics" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master.dia",
+    "emit-module-dependencies" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master-emit-module.dia",
+    "swift-dependencies" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Nuby-master.swiftdeps"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/CinemaView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/CinemaView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/CinemaView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/CinemaView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/ContentView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/Logger.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Logger.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Logger.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Logger.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/Movie.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Movie.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Movie.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/Movie.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/MovieDatabase.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieDatabase.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieDatabase.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieDatabase.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/MovieListItemView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieListItemView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieListItemView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieListItemView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/MovieManager.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieManager.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieManager.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieManager.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/MoviePosterView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MoviePosterView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MoviePosterView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MoviePosterView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/MovieRow.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieRow.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieRow.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/MovieRow.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/NubyApp.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/NubyApp.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/NubyApp.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/NubyApp.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/OnboardingView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/OnboardingView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/OnboardingView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/OnboardingView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/PlatformView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/PlatformView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/PlatformView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/PlatformView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/SearchBar.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SearchBar.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SearchBar.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SearchBar.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/SettingsView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SettingsView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/SharedMovieItemView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SharedMovieItemView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SharedMovieItemView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/SharedMovieItemView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/Nuby/TimelineCaptureView.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/TimelineCaptureView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/TimelineCaptureView.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/TimelineCaptureView.o"
+  },
+  "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Volumes/Rabah_SSD/deaf sign 3/Nuby/build/Nuby.build/Release-iphoneos/Nuby.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

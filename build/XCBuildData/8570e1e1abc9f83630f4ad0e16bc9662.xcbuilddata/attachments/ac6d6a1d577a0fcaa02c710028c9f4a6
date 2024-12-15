@@ -1,0 +1,345 @@
+{
+  "" : {
+    "const-values" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master.swiftconstvalues",
+    "dependencies" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master.d",
+    "diagnostics" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master.dia",
+    "emit-module-dependencies" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master-emit-module.dia",
+    "swift-dependencies" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher-master.swiftdeps"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/CacheSerializer.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CacheSerializer.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CacheSerializer.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CacheSerializer.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/DiskStorage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DiskStorage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DiskStorage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DiskStorage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/FormatIndicatedCacheSerializer.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/FormatIndicatedCacheSerializer.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/FormatIndicatedCacheSerializer.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/FormatIndicatedCacheSerializer.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/ImageCache.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageCache.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageCache.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageCache.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/MemoryStorage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/MemoryStorage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/MemoryStorage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/MemoryStorage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Cache/Storage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Storage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Storage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Storage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/CPListItem+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CPListItem+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CPListItem+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CPListItem+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/HasImageComponent+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/HasImageComponent+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/HasImageComponent+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/HasImageComponent+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/ImageView+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageView+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageView+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageView+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/NSButton+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSButton+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSButton+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSButton+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/NSTextAttachment+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSTextAttachment+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSTextAttachment+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/NSTextAttachment+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/PHLivePhotoView+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHLivePhotoView+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHLivePhotoView+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHLivePhotoView+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Extensions/UIButton+Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/UIButton+Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/UIButton+Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/UIButton+Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/AVAssetImageDataProvider.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AVAssetImageDataProvider.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AVAssetImageDataProvider.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AVAssetImageDataProvider.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/ImageDataProvider.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProvider.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProvider.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProvider.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/LivePhotoSource.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/LivePhotoSource.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/LivePhotoSource.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/LivePhotoSource.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/PHPickerResultImageDataProvider.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHPickerResultImageDataProvider.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHPickerResultImageDataProvider.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/PHPickerResultImageDataProvider.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/Resource.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Resource.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Resource.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Resource.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/ImageSource/Source.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Source.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Source.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Source.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KF.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KF.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KF.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KF.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KFOptionsSetter.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFOptionsSetter.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFOptionsSetter.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFOptionsSetter.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/Kingfisher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KingfisherError.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherError.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherError.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherError.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KingfisherManager+LivePhoto.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager+LivePhoto.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager+LivePhoto.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager+LivePhoto.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KingfisherManager.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherManager.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/General/KingfisherOptionsInfo.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherOptionsInfo.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherOptionsInfo.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KingfisherOptionsInfo.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/Filter.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Filter.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Filter.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Filter.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/GIFAnimatedImage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GIFAnimatedImage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GIFAnimatedImage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GIFAnimatedImage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/GraphicsContext.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GraphicsContext.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GraphicsContext.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/GraphicsContext.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/Image.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Image.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Image.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Image.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/ImageDrawing.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDrawing.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDrawing.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDrawing.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/ImageFormat.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageFormat.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageFormat.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageFormat.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/ImageProcessor.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProcessor.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProcessor.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProcessor.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/ImageProgressive.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProgressive.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProgressive.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageProgressive.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/ImageTransition.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageTransition.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageTransition.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageTransition.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Image/Placeholder.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Placeholder.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Placeholder.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Placeholder.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/AuthenticationChallengeResponsable.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AuthenticationChallengeResponsable.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AuthenticationChallengeResponsable.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AuthenticationChallengeResponsable.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImageDataProcessor.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProcessor.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProcessor.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDataProcessor.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImageDownloader+LivePhoto.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader+LivePhoto.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader+LivePhoto.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader+LivePhoto.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImageDownloader.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloader.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImageDownloaderDelegate.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloaderDelegate.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloaderDelegate.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageDownloaderDelegate.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImageModifier.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageModifier.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageModifier.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageModifier.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/ImagePrefetcher.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImagePrefetcher.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImagePrefetcher.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImagePrefetcher.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/RedirectHandler.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RedirectHandler.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RedirectHandler.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RedirectHandler.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/RequestModifier.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RequestModifier.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RequestModifier.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RequestModifier.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/RetryStrategy.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RetryStrategy.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RetryStrategy.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/RetryStrategy.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/SessionDataTask.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDataTask.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDataTask.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDataTask.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Networking/SessionDelegate.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDelegate.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDelegate.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SessionDelegate.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/ImageBinder.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageBinder.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageBinder.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageBinder.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/ImageContext.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageContext.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageContext.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ImageContext.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/KFAnimatedImage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFAnimatedImage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFAnimatedImage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFAnimatedImage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/KFImage.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImage.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImage.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImage.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/KFImageOptions.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageOptions.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageOptions.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageOptions.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/KFImageProtocol.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageProtocol.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageProtocol.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageProtocol.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/SwiftUI/KFImageRenderer.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageRenderer.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageRenderer.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/KFImageRenderer.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/Box.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Box.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Box.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Box.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/CallbackQueue.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CallbackQueue.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CallbackQueue.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/CallbackQueue.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/Delegate.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Delegate.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Delegate.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Delegate.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/DisplayLink.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DisplayLink.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DisplayLink.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/DisplayLink.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/ExtensionHelpers.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ExtensionHelpers.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ExtensionHelpers.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/ExtensionHelpers.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/Result.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Result.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Result.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Result.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/Runtime.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Runtime.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Runtime.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Runtime.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/SizeExtensions.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SizeExtensions.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SizeExtensions.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/SizeExtensions.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Utility/String+SHA256.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/String+SHA256.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/String+SHA256.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/String+SHA256.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Views/AnimatedImageView.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AnimatedImageView.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AnimatedImageView.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/AnimatedImageView.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/Sources/Views/Indicator.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Indicator.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Indicator.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/Indicator.o"
+  },
+  "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/DerivedSources/resource_bundle_accessor.swift" : {
+    "index-unit-output-path" : "/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/resource_bundle_accessor.o",
+    "llvm-bc" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/resource_bundle_accessor.bc",
+    "object" : "/Volumes/Rabah_SSD/developer/DerivedData/Nuby-aafvtmqslfghbtdooaedyjxawigf/SourcePackages/checkouts/Kingfisher/build/Kingfisher.build/Release-iphoneos/Kingfisher.build/Objects-normal/arm64/resource_bundle_accessor.o"
+  }
+}
