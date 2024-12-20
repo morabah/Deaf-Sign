@@ -99,28 +99,44 @@ class MovieDatabase: ObservableObject {
     private func loadMovies() {
         guard !savedMoviesData.isEmpty else {
             os_log("No saved movies data found", log: .default, type: .debug)
-            movies = []
+            DispatchQueue.main.async {
+                self.movies = []
+            }
             return
         }
         
-        do {
-            let decoder = JSONDecoder()
-            movies = try decoder.decode([Movie].self, from: savedMoviesData)
-            os_log("Loaded %d movies from storage", log: .default, type: .debug, movies.count)
-        } catch {
-            os_log("Error loading movies: %{public}@", log: .default, type: .error, error.localizedDescription)
-            movies = []
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            do {
+                let decoder = JSONDecoder()
+                let loadedMovies = try decoder.decode([Movie].self, from: self.savedMoviesData)
+                
+                DispatchQueue.main.async {
+                    self.movies = loadedMovies
+                    os_log("Loaded %d movies from storage", log: .default, type: .debug, loadedMovies.count)
+                }
+            } catch {
+                os_log("Error loading movies: %{public}@", log: .default, type: .error, error.localizedDescription)
+                DispatchQueue.main.async {
+                    self.movies = []
+                }
+            }
         }
     }
     
     /// Saves movies to persistent storage
     private func saveMovies() {
-        do {
-            let encoder = JSONEncoder()
-            savedMoviesData = try encoder.encode(movies)
-            os_log("Saved %d movies to storage", log: .default, type: .debug, movies.count)
-        } catch {
-            os_log("Error saving movies: %{public}@", log: .default, type: .error, error.localizedDescription)
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+            
+            do {
+                let encoder = JSONEncoder()
+                self.savedMoviesData = try encoder.encode(self.movies)
+                os_log("Saved %d movies to storage", log: .default, type: .debug, self.movies.count)
+            } catch {
+                os_log("Error saving movies: %{public}@", log: .default, type: .error, error.localizedDescription)
+            }
         }
     }
     

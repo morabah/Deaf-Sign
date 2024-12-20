@@ -32,22 +32,50 @@ public struct CinemaInformation: Identifiable, Codable, Equatable, Hashable {
     }
 }
 
-/// Movie information
+/// Movie information with optimized memory management
 public struct Movie: Identifiable, Codable, Equatable, Hashable {
     public let id: UUID
     public let title: String
     public let cinema: CinemaInformation
     public let source: MovieSource
-    public let posterImage: String?
-    public let releaseDate: Date?
+    public private(set) var posterImage: String?
+    public private(set) var releaseDate: Date?
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, title, cinema, source, posterImage, releaseDate
+    }
     
     public init(id: UUID = UUID(), title: String, cinema: CinemaInformation, source: MovieSource, posterImage: String? = nil, releaseDate: Date? = nil) {
         self.id = id
-        self.title = title
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.cinema = cinema
         self.source = source
-        self.posterImage = posterImage
+        self.posterImage = posterImage?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.releaseDate = releaseDate
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title).trimmingCharacters(in: .whitespacesAndNewlines)
+        cinema = try container.decode(CinemaInformation.self, forKey: .cinema)
+        source = try container.decode(MovieSource.self, forKey: .source)
+        posterImage = try container.decodeIfPresent(String.self, forKey: .posterImage)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        releaseDate = try container.decodeIfPresent(Date.self, forKey: .releaseDate)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(cinema, forKey: .cinema)
+        try container.encode(source, forKey: .source)
+        try container.encodeIfPresent(posterImage, forKey: .posterImage)
+        try container.encodeIfPresent(releaseDate, forKey: .releaseDate)
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
     
     public static func == (lhs: Movie, rhs: Movie) -> Bool {

@@ -94,23 +94,34 @@ class MovieManager: ObservableObject {
     /// Searches movies based on a given query
     func searchMovies(query: String) {
         Logger.log("Searching movies - Initial query: \(query)", level: .debug)
-        Logger.log("Total movies in database: \(movies.count)", level: .debug)
         
+        // Reset to full list if query is empty
         guard !query.isEmpty else {
-            filteredMovies = movies
-            searchState = .idle
+            DispatchQueue.main.async {
+                self.filteredMovies = self.movies
+                self.searchState = .idle
+            }
             return
         }
         
-        let lowercasedQuery = query.lowercased()
-        filteredMovies = movies.filter { movie in
-            let titleMatch = movie.title.lowercased().contains(lowercasedQuery)
-            let cinemaMatch = movie.cinema.name.lowercased().contains(lowercasedQuery)
-            return titleMatch || cinemaMatch
+        // Perform search on background thread
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            let lowercasedQuery = query.lowercased()
+            let results = self.movies.filter { movie in
+                let titleMatch = movie.title.lowercased().contains(lowercasedQuery)
+                let cinemaMatch = movie.cinema.name.lowercased().contains(lowercasedQuery)
+                return titleMatch || cinemaMatch
+            }
+            
+            // Update UI on main thread
+            DispatchQueue.main.async {
+                self.filteredMovies = results
+                self.searchState = results.isEmpty ? .error("No movies found for the query: \(query)") : .completed
+                Logger.log("Found \(results.count) movies for query: \(query)", level: .debug)
+            }
         }
-        
-        searchState = filteredMovies.isEmpty ? .error("No movies found for the query: \(query)") : .completed
-        Logger.log("Found \(filteredMovies.count) movies for query: \(query)", level: .debug)
     }
     
     /// Adds a new movie to the database

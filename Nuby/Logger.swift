@@ -32,13 +32,18 @@ enum Logger {
         line: Int = #line
     ) {
         let fileName = (file as NSString).lastPathComponent
-        let logMessage = "[\(fileName):\(line)] \(function) | \(message)"
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let logMessage = "[\(timestamp)] [\(fileName):\(line)] \(function) | \(message)"
         
         // Log to both console and Apple's unified logging system
         switch level {
         case .trace:
             print("🔍 TRACE: \(logMessage)")
-            logger.trace("\(logMessage)")
+            if #available(iOS 14.0, *) {
+                logger.trace("\(logMessage)")
+            } else {
+                logger.debug("\(logMessage)")
+            }
         case .debug:
             print("🐞 DEBUG: \(logMessage)")
             logger.debug("\(logMessage)")
@@ -54,7 +59,33 @@ enum Logger {
         case .critical:
             print("🚨 CRITICAL: \(logMessage)")
             logger.fault("\(logMessage)")
+            
+            // For critical errors, we might want to take additional actions
+            handleCriticalError(message: logMessage)
         }
+    }
+    
+    /// Handle critical errors that require immediate attention
+    private static func handleCriticalError(message: String) {
+        // Save critical error to persistent storage
+        saveCriticalError(message)
+        
+        // Could integrate with crash reporting service
+        // reportCriticalError(message)
+    }
+    
+    /// Save critical error to persistent storage for later analysis
+    private static func saveCriticalError(_ message: String) {
+        let userDefaults = UserDefaults.standard
+        var criticalErrors = userDefaults.array(forKey: "CriticalErrors") as? [String] ?? []
+        criticalErrors.append(message)
+        
+        // Keep only the last 100 critical errors
+        if criticalErrors.count > 100 {
+            criticalErrors.removeFirst(criticalErrors.count - 100)
+        }
+        
+        userDefaults.set(criticalErrors, forKey: "CriticalErrors")
     }
     
     /// Comprehensive error handling and logging
