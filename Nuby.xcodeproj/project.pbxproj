@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F2017F912D092F1B0025CE92 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F2017F902D092F1B0025CE92 /* FirebaseAuth */; };
 		F2017F932D092F340025CE92 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F2017F922D092F340025CE92 /* FirebaseFirestore */; };
+		F2C15F632D24B34400DDE5B3 /* SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C15F622D24B34400DDE5B3 /* SubscriptionView.swift */; };
 		F2D8C4562D092A8600F98738 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = F2D8C4552D092A8600F98738 /* FirebaseAnalytics */; };
 		F2D8C4582D092A8600F98738 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */ = {isa = PBXBuildFile; productRef = F2D8C4572D092A8600F98738 /* FirebaseAnalyticsOnDeviceConversion */; };
 		F2D8C45A2D092A8600F98738 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */ = {isa = PBXBuildFile; productRef = F2D8C4592D092A8600F98738 /* FirebaseAnalyticsWithoutAdIdSupport */; };
@@ -21,6 +22,7 @@
 
 /* Begin PBXFileReference section */
 		F202F4142D01ED1600CD243B /* Nuby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nuby.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2C15F622D24B34400DDE5B3 /* SubscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -62,6 +64,7 @@
 		F202F40B2D01ED1600CD243B = {
 			isa = PBXGroup;
 			children = (
+				F2C15F622D24B34400DDE5B3 /* SubscriptionView.swift */,
 				F202F4162D01ED1600CD243B /* Nuby */,
 				F2017F8F2D092F1B0025CE92 /* Frameworks */,
 				F202F4152D01ED1600CD243B /* Products */,
@@ -165,6 +168,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2C15F632D24B34400DDE5B3 /* SubscriptionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -8,8 +8,8 @@ struct SettingsView: View {
     
     @State private var isAddingMovie = false
     @State private var newMovieTitle = ""
-    @State private var newMovieLink = ""
-    @State private var selectedType: MovieSource? = nil
+    @State private var newMovieLink = "https://www."
+    @State private var selectedType: MovieSource = .cinema
     @State private var showInvalidURLAlert = false
     
     @State private var editingMovie: Movie?
@@ -25,13 +25,11 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        // Using NavigationStack for a more current UI approach.
         NavigationStack {
             List {
                 Section(header: Text("Your Movie Library")) {
                     ForEach(movieDatabase.movies) { movie in
                         ZStack {
-                            // Background styling is handled by the list style itself
                             rowContent(for: movie)
                         }
                         .listRowSeparator(.automatic)
@@ -43,11 +41,11 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Button {
+                    Button(action: {
                         isAddingMovie = true
-                    } label: {
+                    }) {
                         Label("Add Movie", systemImage: "plus.circle.fill")
-                            .foregroundColor(.blue) // Ensure suitable color for both modes
+                            .foregroundColor(.blue)
                     }
                     .accessibilityLabel("Add a new movie")
                     .accessibilityHint("Opens a form to enter new movie details.")
@@ -77,11 +75,8 @@ struct SettingsView: View {
                 addMovieSheet
             }
         }
-        // Additional integrity checks or performance improvements could be done elsewhere,
-        // such as validating data on appear or logging errors with os_log.
     }
     
-    // Separate view content for each movie row to keep things clear and maintainable.
     private func rowContent(for movie: Movie) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
@@ -95,7 +90,7 @@ struct SettingsView: View {
                         .accessibilityLabel("Edit movie link")
                     
                     Picker("Source", selection: $editedType) {
-                        Text("CinemaInformation").tag(MovieSource.cinema)
+                        Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
                     }
                     .pickerStyle(SegmentedPickerStyle())
@@ -132,7 +127,7 @@ struct SettingsView: View {
                 } else {
                     Button(action: { startEditing(movie) }) {
                         Image(systemName: "pencil.circle")
-                            .foregroundColor(.blue) // Ensure suitable color for both modes
+                            .foregroundColor(.blue)
                             .imageScale(.large)
                             .accessibilityLabel("Edit movie details")
                     }
@@ -162,8 +157,7 @@ struct SettingsView: View {
                         .accessibilityLabel("New movie link")
                     
                     Picker("Movie Source", selection: $selectedType) {
-                        Text("Select a source").tag(nil as MovieSource?)
-                        Text("CinemaInformation").tag(MovieSource.cinema)
+                        Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
                     }
                     .accessibilityLabel("Source for the new movie")
@@ -181,7 +175,7 @@ struct SettingsView: View {
                     Button("Add") {
                         addMovie()
                     }
-                    .disabled(newMovieTitle.isEmpty || newMovieLink.isEmpty || selectedType == nil)
+                    .disabled(newMovieTitle.isEmpty || newMovieLink.isEmpty)
                     .accessibilityLabel("Confirm adding new movie")
                 }
             }
@@ -191,7 +185,6 @@ struct SettingsView: View {
     private func addMovie() {
         guard !newMovieTitle.isEmpty,
               !newMovieLink.isEmpty,
-              let type = selectedType,
               isValidURL(newMovieLink) else {
             showInvalidURLAlert = true
             return
@@ -201,13 +194,13 @@ struct SettingsView: View {
             id: UUID(),
             title: newMovieTitle,
             cinema: CinemaInformation(id: UUID(), name: "Default Cinema", location: "Unknown"),
-            source: type,
+            source: selectedType,
             posterImage: newMovieLink,
             releaseDate: nil
         )
         
         // Logging selected type for debugging purposes.
-        os_log("Added movie with source: %{public}@", log: .default, type: .debug, type.rawValue)
+        os_log("Added movie with source: %{public}@", log: .default, type: .debug, selectedType.rawValue)
         
         movieDatabase.addMovie(movie)
         resetAddMovieFields()
@@ -215,8 +208,8 @@ struct SettingsView: View {
     
     private func resetAddMovieFields() {
         newMovieTitle = ""
-        newMovieLink = ""
-        selectedType = nil
+        newMovieLink = "https://www."
+        selectedType = .cinema
         isAddingMovie = false
     }
     

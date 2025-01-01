@@ -9,16 +9,14 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     var previewLayer: AVCaptureVideoPreviewLayer!
     var photoOutput: AVCapturePhotoOutput!
 
-    // Label to display the recognized timeline
-    private let timelineLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = .white
-        label.font = UIFont.boldSystemFont(ofSize: 24)
-        label.textAlignment = .center
-        label.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        label.layer.cornerRadius = 10
-        label.clipsToBounds = true
-        return label
+    // Capture button
+    private let captureButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "camera.circle.fill"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        button.layer.cornerRadius = 30
+        return button
     }()
 
     init(movie: Movie, onNumbersDetected: @escaping ([Int]) -> Void) {
@@ -34,8 +32,8 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         checkCameraPermissions()
+        setupCamera()
         setupCaptureButton()
-        setupTimelineLabel()
     }
 
     private func checkCameraPermissions() {
@@ -94,14 +92,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     }
 
     private func setupCaptureButton() {
-        let captureButton = UIButton(type: .system)
-        captureButton.setImage(UIImage(systemName: "camera.circle.fill"), for: .normal)
-        captureButton.tintColor = .white
-        captureButton.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        captureButton.layer.cornerRadius = 30
-        captureButton.addTarget(self, action: #selector(capturePhoto), for: .touchUpInside)
-        
-        // Add button to the view
+        // Add capture button to the view
         view.addSubview(captureButton)
         
         // Position the button at the bottom center
@@ -112,17 +103,9 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
             captureButton.widthAnchor.constraint(equalToConstant: 60),
             captureButton.heightAnchor.constraint(equalToConstant: 60)
         ])
-    }
-
-    private func setupTimelineLabel() {
-        view.addSubview(timelineLabel)
-        timelineLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            timelineLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            timelineLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            timelineLabel.widthAnchor.constraint(equalToConstant: 200),
-            timelineLabel.heightAnchor.constraint(equalToConstant: 50)
-        ])
+        
+        // Add action to the button
+        captureButton.addTarget(self, action: #selector(capturePhoto), for: .touchUpInside)
     }
 
     @objc private func capturePhoto() {
@@ -137,8 +120,9 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
             return
         }
 
-        // Process the image to detect timeline
-        recognizeTimeline(from: image)
+        // Fix image orientation before processing
+        let normalizedImage = fixImageOrientation(image)
+        recognizeTimeline(from: normalizedImage)
     }
 
     private func recognizeTimeline(from image: UIImage) {
@@ -160,10 +144,22 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
                 }
             }
 
-            // Extract timeline from recognized text
-            let timeline = self?.extractTimeline(from: recognizedText) ?? "00:00:00"
+            // Log recognized text for debugging
+            print("Recognized Text: \(recognizedText)")
+
+            // Extract time from recognized text
+            let time = self?.extractTime(from: recognizedText) ?? "00:00"
+            print("Extracted Time: \(time)") // Debugging
+
+            let numbers = self?.convertTimeToNumbers(time) ?? [0, 0, 0]
+            print("Converted Numbers: \(numbers)") // Debugging
+
             DispatchQueue.main.async {
-                self?.timelineLabel.text = timeline
+                // Dismiss the camera view
+                self?.dismiss(animated: true) {
+                    // Pass the recognized time back to the parent view
+                    self?.onNumbersDetected(numbers)
+                }
             }
         }
 
@@ -179,17 +175,89 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
         }
     }
 
-    private func extractTimeline(from text: String) -> String {
-        // Example: Extract a timeline in the format "HH:MM:SS"
-        let pattern = "\\b\\d{2}:\\d{2}:\\d{2}\\b"
-        let regex = try! NSRegularExpression(pattern: pattern)
-        let range = NSRange(location: 0, length: text.utf16.count)
+    private func extractTime(from text: String) -> String {
+        // More flexible patterns to match various time formats
+        let patterns = [
+            "\\b\\d{1,2}[:.\\s]\\d{2}\\s*(AM|PM|am|pm)?\\b",  // Matches "2:20 AM", "2.20 AM", "2 20 AM"
+            "\\b(\\d{1,2})[:.\\s](\\d{2})\\b",                // Matches "2:20", "2.20", "2 20"
+            "\\b\\d{4}\\b"                                     // Matches "0220" for 2:20
+        ]
+        
+        print("Attempting to extract time from text: \(text)")
+        
+        for (index, pattern) in patterns.enumerated() {
+            do {
+                let regex = try NSRegularExpression(pattern: pattern)
+                let range = NSRange(location: 0, length: text.utf16.count)
+                
+                if let match = regex.firstMatch(in: text, options: [], range: range),
+                   let range = Range(match.range, in: text) {
+                    let timeStr = String(text[range])
+                    print("Match found with pattern \(index): \(timeStr)")
+                    return timeStr
+                }
+            } catch {
+                print("Regex error with pattern \(index): \(error)")
+            }
+        }
+        
+        print("No time pattern matched in the text")
+        return "00:00"
+    }
+    
+    private func convertTimeToNumbers(_ time: String) -> [Int] {
+        print("Converting time string: \(time)")
+        var numbers = [0, 0, 0] // [hours, minutes, seconds]
+        
+        // Remove any whitespace and convert to lowercase
+        let cleanTime = time.lowercased().trimmingCharacters(in: .whitespaces)
+        
+        // Handle 4-digit format (e.g., "0220" for 2:20)
+        if cleanTime.count == 4, let timeInt = Int(cleanTime) {
+            numbers[0] = timeInt / 100  // Hours
+            numbers[1] = timeInt % 100  // Minutes
+            print("Parsed 4-digit time: \(numbers[0]):\(numbers[1])")
+            return numbers
+        }
+        
+        // Split by common separators
+        let components = cleanTime.components(separatedBy: CharacterSet(charactersIn: ": ."))
+            .filter { !$0.isEmpty }
+        
+        print("Time components: \(components)")
+        
+        if components.count >= 2 {
+            // Extract hours and minutes
+            if let hours = Int(components[0]) {
+                numbers[0] = hours
+            }
+            
+            if let minutes = Int(components[1]) {
+                numbers[1] = minutes
+            }
+            
+            // Handle AM/PM
+            let timeString = cleanTime
+            if timeString.contains("pm") && numbers[0] < 12 {
+                numbers[0] += 12
+            } else if timeString.contains("am") && numbers[0] == 12 {
+                numbers[0] = 0
+            }
+        }
+        
+        print("Final converted numbers: \(numbers)")
+        return numbers
+    }
 
-        if let match = regex.firstMatch(in: text, options: [], range: range),
-           let range = Range(match.range, in: text) {
-            return String(text[range])
+    private func fixImageOrientation(_ image: UIImage) -> UIImage {
+        if image.imageOrientation == .up {
+            return image
         }
 
-        return "00:00:00" // Default if no timeline is found
+        UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return normalizedImage
     }
 }
