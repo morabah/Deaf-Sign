@@ -1,289 +1,271 @@
 import SwiftUI
-import Foundation
 import os
 
+/// Main settings view for managing movie library and app preferences
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var movieDatabase: MovieDatabase
+    @StateObject private var movieManager: MovieManager
     
-    @State private var isAddingMovie = false
-    @State private var newMovieTitle = ""
-    @State private var newMovieLink = "https://www."
-    @State private var selectedType: MovieSource = .cinema
-    @State private var showInvalidURLAlert = false
-    
+    // MARK: - State Variables
+    @State private var searchText = ""
     @State private var editingMovie: Movie?
-    @State private var editedTitle = ""
-    @State private var editedLink = ""
-    @State private var editedType: MovieSource?
-    
+    @State private var isAddingMovie = false
     @State private var showDeleteConfirmation = false
     @State private var movieToDelete: Movie?
     
+    // MARK: - Initialization
     init(movieDatabase: MovieDatabase? = nil) {
-        self.movieDatabase = movieDatabase ?? MovieDatabase()
+        let db = movieDatabase ?? MovieDatabase()
+        self.movieDatabase = db
+        // Initialize MovieManager with the same database instance
+        _movieManager = StateObject(wrappedValue: MovieManager(movieDatabase: db))
     }
     
+    // MARK: - Computed Properties
+    private var filteredMovies: [Movie] {
+        if searchText.isEmpty {
+            return movieDatabase.movies
+        }
+        return movieDatabase.movies.filter { 
+            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            $0.source.rawValue.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    
+    // MARK: - Main View
     var body: some View {
         NavigationStack {
-            List {
-                Section(header: Text("Your Movie Library")) {
-                    ForEach(movieDatabase.movies) { movie in
-                        ZStack {
-                            rowContent(for: movie)
-                        }
-                        .listRowSeparator(.automatic)
-                        .listRowInsets(EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10))
-                        .listRowBackground(Color(UIColor.secondarySystemGroupedBackground))
-                        .accessibilityElement(children: .combine)
-                    }
-                    .onDelete(perform: confirmDelete)
-                }
+            VStack(spacing: 0) {
+                // Search bar
+                SearchBar(text: $searchText, movieManager: movieManager)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
                 
-                Section {
-                    Button(action: {
-                        isAddingMovie = true
-                    }) {
-                        Label("Add Movie", systemImage: "plus.circle.fill")
-                            .foregroundColor(.blue)
-                    }
-                    .accessibilityLabel("Add a new movie")
-                    .accessibilityHint("Opens a form to enter new movie details.")
-                }
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .alert("Invalid URL", isPresented: $showInvalidURLAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("Please enter a valid URL that can be opened.")
-            }
-            .alert("Delete Movie", isPresented: $showDeleteConfirmation) {
-                Button("Delete", role: .destructive) {
-                    if let movie = movieToDelete {
-                        DispatchQueue.main.async {
-                            movieDatabase.removeMovie(movie)
-                            movieToDelete = nil
-                        }
+                // Movie list
+                List {
+                    ForEach(filteredMovies) { movie in
+                        MovieRowView(movie: movie)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    movieToDelete = movie
+                                    showDeleteConfirmation = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                
+                                Button {
+                                    editingMovie = movie
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
                     }
                 }
-                Button("Cancel", role: .cancel) {
-                    movieToDelete = nil
+                .listStyle(.insetGrouped)
+                
+                // Add button
+                Button(action: { isAddingMovie = true }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add New Movie")
+                    }
+                    .font(.headline)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
                 }
-            } message: {
-                Text("Are you sure you want to remove this movie?")
+                .padding()
+            }
+            .navigationTitle("Movie Library")
+            .navigationBarTitleDisplayMode(.large)
+            .sheet(item: $editingMovie) { movie in
+                MovieEditSheet(movie: movie, movieDatabase: movieDatabase)
             }
             .sheet(isPresented: $isAddingMovie) {
-                addMovieSheet
+                MovieAddSheet(movieDatabase: movieDatabase, isPresented: $isAddingMovie)
+            }
+            .confirmationDialog("Delete Movie", isPresented: $showDeleteConfirmation, presenting: movieToDelete) { movie in
+                Button("Delete", role: .destructive) {
+                    withAnimation {
+                        movieDatabase.removeMovie(movie)
+                    }
+                    movieToDelete = nil
+                }
+            } message: { movie in
+                Text("Are you sure you want to delete '\(movie.title)'?")
             }
         }
     }
+}
+
+// MARK: - Supporting Views
+struct MovieRowView: View {
+    let movie: Movie
     
-    private func rowContent(for movie: Movie) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                if editingMovie?.id == movie.id {
-                    TextField("Title", text: $editedTitle)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .accessibilityLabel("Edit movie title")
-                    
-                    TextField("Link (URL)", text: $editedLink)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .accessibilityLabel("Edit movie link")
-                    
-                    Picker("Source", selection: $editedType) {
-                        Text("Cinema").tag(MovieSource.cinema)
-                        Text("Platform").tag(MovieSource.platform)
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .accessibilityLabel("Choose movie source")
-                    
-                } else {
-                    Text(movie.title)
-                        .font(.headline)
-                        .accessibilityLabel("\(movie.title), \(movie.source.rawValue)")
-                    
-                    Text(movie.source.rawValue)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(movie.title)
+                .font(.headline)
+            
+            HStack {
+                Label(movie.source.rawValue, systemImage: 
+                    movie.source == .cinema ? "film" : "play.tv")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                if let date = movie.releaseDate {
+                    Text(date, style: .date)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                        .accessibilityHidden(true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            HStack(spacing: 20) {
-                if editingMovie?.id == movie.id {
-                    Button(action: { saveEditedMovie(movie) }) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                            .imageScale(.large)
-                            .accessibilityLabel("Save changes")
-                    }
-                    
-                    Button(action: cancelEditing) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
-                            .imageScale(.large)
-                            .accessibilityLabel("Cancel editing")
-                    }
-                } else {
-                    Button(action: { startEditing(movie) }) {
-                        Image(systemName: "pencil.circle")
-                            .foregroundColor(.blue)
-                            .imageScale(.large)
-                            .accessibilityLabel("Edit movie details")
-                    }
-                    
-                    Button(action: {
-                        movieToDelete = movie
-                        showDeleteConfirmation = true
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .imageScale(.large)
-                            .accessibilityLabel("Delete this movie")
-                    }
                 }
             }
         }
+        .padding(.vertical, 4)
     }
+}
+
+struct MovieAddSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var movieDatabase: MovieDatabase
+    @Binding var isPresented: Bool
     
-    private var addMovieSheet: some View {
-        NavigationStack {
+    @State private var title = ""
+    @State private var link = ""
+    @State private var source: MovieSource = .cinema
+    
+    var body: some View {
+        NavigationView {
             Form {
                 Section(header: Text("Movie Details")) {
-                    TextField("Movie Title", text: $newMovieTitle)
-                        .accessibilityLabel("New movie title")
+                    TextField("Title", text: $title)
+                        .textInputAutocapitalization(.words)
                     
-                    TextField("Movie Link (URL)", text: $newMovieLink)
-                        .accessibilityLabel("New movie link")
+                    TextField("Link", text: $link)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
                     
-                    Picker("Movie Source", selection: $selectedType) {
+                    Picker("Source", selection: $source) {
                         Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
                     }
-                    .accessibilityLabel("Source for the new movie")
+                    .pickerStyle(.segmented)
                 }
             }
             .navigationTitle("Add Movie")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        resetAddMovieFields()
-                    }
-                    .accessibilityLabel("Cancel adding movie")
+                    Button("Cancel") { isPresented = false }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        addMovie()
-                    }
-                    .disabled(newMovieTitle.isEmpty || newMovieLink.isEmpty)
-                    .accessibilityLabel("Confirm adding new movie")
+                    Button("Add") { addMovie() }
+                        .disabled(title.isEmpty || link.isEmpty)
                 }
             }
         }
     }
     
     private func addMovie() {
-        guard !newMovieTitle.isEmpty,
-              !newMovieLink.isEmpty,
-              isValidURL(newMovieLink) else {
-            showInvalidURLAlert = true
-            Logger.log("Invalid URL entered", level: .error)
-            return
-        }
-        
+        let cinema = CinemaInformation(id: UUID(), name: "Default Cinema", location: "Unknown")
         let movie = Movie(
             id: UUID(),
-            title: newMovieTitle,
-            cinema: CinemaInformation(id: UUID(), name: "Default Cinema", location: "Unknown"),
-            source: selectedType,
-            posterImage: newMovieLink,
+            title: title,
+            cinema: cinema,
+            source: source,
+            posterImage: link,
             releaseDate: nil
         )
         
-        Logger.log("Added movie with source: \(selectedType.rawValue)", level: .debug)
-        
-        DispatchQueue.main.async {
-            movieDatabase.addMovie(movie)
-        }
-        
-        resetAddMovieFields()
-    }
-    
-    private func resetAddMovieFields() {
-        newMovieTitle = ""
-        newMovieLink = "https://www."
-        selectedType = .cinema
-        isAddingMovie = false
-    }
-    
-    private func startEditing(_ movie: Movie) {
-        editingMovie = movie
-        editedTitle = movie.title
-        editedLink = movie.posterImage ?? ""
-        editedType = movie.source
-    }
-    
-    private func cancelEditing() {
-        editingMovie = nil
-        editedTitle = ""
-        editedLink = ""
-        editedType = nil
-    }
-    
-    private func saveEditedMovie(_ originalMovie: Movie) {
-        guard !editedTitle.isEmpty,
-              !editedLink.isEmpty,
-              let newType = editedType,
-              isValidURL(editedLink) else {
-            showInvalidURLAlert = true
-            Logger.log("Invalid URL entered", level: .error)
-            return
-        }
-        
-        let updatedMovie = Movie(
-            id: originalMovie.id,
-            title: editedTitle,
-            cinema: originalMovie.cinema,
-            source: newType,
-            posterImage: editedLink,
-            releaseDate: originalMovie.releaseDate
-        )
-        
-        DispatchQueue.main.async {
-            movieDatabase.updateMovie(updatedMovie)
-        }
-        
-        cancelEditing()
-    }
-    
-    private func confirmDelete(at offsets: IndexSet) {
-        // This could be adapted if needed. Currently using a confirmation alert instead.
-        // If you want direct deletion without confirmation, uncomment the line below:
-        // movieDatabase.movies.remove(atOffsets: offsets)
-    }
-    
-    private func isValidURL(_ urlString: String) -> Bool {
-        // Checking URL integrity before attempting to open it.
-        guard let url = URL(string: urlString) else {
-            return false
-        }
-        return UIApplication.shared.canOpenURL(url)
+        movieDatabase.addMovie(movie)
+        isPresented = false
     }
 }
 
+struct MovieEditSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let movie: Movie
+    @ObservedObject var movieDatabase: MovieDatabase
+    
+    @State private var title: String
+    @State private var link: String
+    @State private var source: MovieSource
+    
+    init(movie: Movie, movieDatabase: MovieDatabase) {
+        self.movie = movie
+        self.movieDatabase = movieDatabase
+        _title = State(initialValue: movie.title)
+        _link = State(initialValue: movie.posterImage ?? "")
+        _source = State(initialValue: movie.source)
+    }
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Movie Details")) {
+                    TextField("Title", text: $title)
+                        .textInputAutocapitalization(.words)
+                    
+                    TextField("Link", text: $link)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                    
+                    Picker("Source", selection: $source) {
+                        Text("Cinema").tag(MovieSource.cinema)
+                        Text("Platform").tag(MovieSource.platform)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+            .navigationTitle("Edit Movie")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { saveChanges() }
+                        .disabled(title.isEmpty || link.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func saveChanges() {
+        let cinema = CinemaInformation(id: movie.cinema.id, name: movie.cinema.name, location: movie.cinema.location)
+        let updatedMovie = Movie(
+            id: movie.id,
+            title: title,
+            cinema: cinema,
+            source: source,
+            posterImage: link,
+            releaseDate: movie.releaseDate
+        )
+        
+        movieDatabase.updateMovie(updatedMovie)
+        dismiss()
+    }
+}
+
+// An extension to the Logger class to handle logging
 extension Logger {
+    // Log a message with a level
     static func log(_ message: String, level: LogLevel) {
         os_log("%{public}@", log: .default, type: level.osLogType, message)
     }
     
+    // Handle an error with a context and level
     static func handle(_ error: Error, context: String, level: LogLevel) {
         os_log("%{public}@: %{public}@", log: .default, type: level.osLogType, context, error.localizedDescription)
     }
 }
 
+// An extension to the LogLevel enum to get the OS log type
 extension LogLevel {
+    // Get the OS log type for the level
     var osLogType: OSLogType {
         switch self {
         case .debug:
@@ -298,6 +280,7 @@ extension LogLevel {
     }
 }
 
+// An enum for the log levels
 enum LogLevel {
     case debug
     case info

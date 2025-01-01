@@ -8,14 +8,18 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
     var photoOutput: AVCapturePhotoOutput!
+    var feedbackGenerator: UIImpactFeedbackGenerator?
 
     // Capture button
     private let captureButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "camera.circle.fill"), for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        button.layer.cornerRadius = 30
+        button.backgroundColor = UIColor.systemBlue
+        button.layer.cornerRadius = 35
+        button.layer.borderWidth = 3
+        button.layer.borderColor = UIColor.white.cgColor
+        button.setTitle("Capture", for: .normal)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+        button.setTitleColor(.white, for: .normal)
         return button
     }()
 
@@ -33,7 +37,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
         super.viewDidLoad()
         checkCameraPermissions()
         setupCamera()
-        setupCaptureButton()
+        setupUI()
     }
 
     private func checkCameraPermissions() {
@@ -84,8 +88,6 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
                 return
             }
             
-            setupPreviewLayer()
-            
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 self?.captureSession.startRunning()
                 Logger.log("Camera capture session started", level: .info)
@@ -95,32 +97,98 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
         }
     }
 
-    private func setupPreviewLayer() {
-        Logger.log("Setting up camera preview layer", level: .debug)
+    private func setupUI() {
+        Logger.log("Setting up camera UI", level: .debug)
+        
+        // Configure preview layer
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        previewLayer.frame = view.bounds
         previewLayer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(previewLayer)
-        previewLayer.frame = view.layer.bounds
-    }
-
-    private func setupCaptureButton() {
-        // Add capture button to the view
-        view.addSubview(captureButton)
         
-        // Position the button at the bottom center
+        // Create a container view for buttons
+        let buttonContainer = UIView()
+        buttonContainer.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(buttonContainer)
+        
+        // Setup exit button
+        let exitButton = UIButton(type: .system)
+        exitButton.translatesAutoresizingMaskIntoConstraints = false
+        exitButton.setImage(UIImage(systemName: "xmark.circle.fill")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 30, weight: .medium)
+        ), for: .normal)
+        exitButton.tintColor = .white
+        exitButton.addTarget(self, action: #selector(exitButtonTapped), for: .touchUpInside)
+        buttonContainer.addSubview(exitButton)
+        
+        // Setup capture button
         captureButton.translatesAutoresizingMaskIntoConstraints = false
+        captureButton.layer.cornerRadius = 35
+        captureButton.layer.borderWidth = 3
+        captureButton.layer.borderColor = UIColor.white.cgColor
+        captureButton.setTitle("Capture", for: .normal)
+        captureButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+        captureButton.setTitleColor(.white, for: .normal)
+        captureButton.addTarget(self, action: #selector(captureButtonTapped), for: .touchUpInside)
+        buttonContainer.addSubview(captureButton)
+        
+        // Add blur effect to the button container
+        let blurEffect = UIBlurEffect(style: .dark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        buttonContainer.insertSubview(blurView, at: 0)
+        
+        // Setup constraints
         NSLayoutConstraint.activate([
-            captureButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            captureButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            captureButton.widthAnchor.constraint(equalToConstant: 60),
-            captureButton.heightAnchor.constraint(equalToConstant: 60)
+            // Button container constraints
+            buttonContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            buttonContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            buttonContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            buttonContainer.heightAnchor.constraint(equalToConstant: 120),
+            
+            // Blur view constraints
+            blurView.topAnchor.constraint(equalTo: buttonContainer.topAnchor),
+            blurView.leadingAnchor.constraint(equalTo: buttonContainer.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: buttonContainer.trailingAnchor),
+            blurView.bottomAnchor.constraint(equalTo: buttonContainer.bottomAnchor),
+            
+            // Exit button constraints
+            exitButton.topAnchor.constraint(equalTo: buttonContainer.topAnchor, constant: 10),
+            exitButton.leadingAnchor.constraint(equalTo: buttonContainer.leadingAnchor, constant: 20),
+            exitButton.widthAnchor.constraint(equalToConstant: 44),
+            exitButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            // Capture button constraints
+            captureButton.centerXAnchor.constraint(equalTo: buttonContainer.centerXAnchor),
+            captureButton.centerYAnchor.constraint(equalTo: buttonContainer.centerYAnchor),
+            captureButton.widthAnchor.constraint(equalToConstant: 70),
+            captureButton.heightAnchor.constraint(equalToConstant: 70)
         ])
         
-        // Add action to the button
-        captureButton.addTarget(self, action: #selector(capturePhoto), for: .touchUpInside)
+        // Add shadow to capture button
+        captureButton.layer.shadowColor = UIColor.black.cgColor
+        captureButton.layer.shadowOffset = CGSize(width: 0, height: 2)
+        captureButton.layer.shadowRadius = 4
+        captureButton.layer.shadowOpacity = 0.3
+        
+        // Add haptic feedback
+        feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator?.prepare()
     }
-
-    @objc private func capturePhoto() {
+    
+    @objc private func exitButtonTapped() {
+        Logger.log("Exit button tapped", level: .debug)
+        feedbackGenerator?.impactOccurred()
+        dismiss(animated: true)
+    }
+    
+    @objc private func captureButtonTapped() {
+        Logger.log("Capture button tapped", level: .debug)
+        feedbackGenerator?.impactOccurred()
+        captureImage()
+    }
+    
+    private func captureImage() {
         let settings = AVCapturePhotoSettings()
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
