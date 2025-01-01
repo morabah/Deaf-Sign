@@ -3,29 +3,22 @@ import WebKit
 
 struct TimelineCaptureView: View {
     @Environment(\.presentationMode) var presentationMode
-    var movie: Movie
-    
-    @State private var capturedNumbers: [Int] = []
+    @EnvironmentObject var movieDatabase: MovieDatabase
+    let movie: Movie
     @State private var showingCamera = false
-    @State private var timelineError: String? = nil
-    @State private var recognizedTimeline: String = ""
+    @State private var capturedNumbers: [Int]?
+    @State private var recognizedTimeline: String?
+    @State private var timelineError: String?
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // Movie Title
                 Text(movie.title)
-                    .font(.headline)
-                    .padding(.top, 20)
-                
-                // Display the recognized timeline
-                if !recognizedTimeline.isEmpty {
-                    Text("Recognized Timeline: \(recognizedTimeline)")
-                        .font(.headline)
-                        .padding()
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(8)
-                }
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                    .padding()
                 
                 // Display the link text above the WebView
                 if let posterImage = movie.posterImage, let url = URL(string: posterImage) {
@@ -53,46 +46,55 @@ struct TimelineCaptureView: View {
                         .padding()
                 }
                 
-                // Capture Timeline Section
-                Text("Press the button below to capture the movie's timeline.")
-                    .font(.title3)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color.blue.opacity(0.2))
-                    .cornerRadius(8)
-                
                 Button(action: {
+                    Logger.log("Opening camera for movie: \(movie.title)", level: .debug)
                     showingCamera = true
                 }) {
-                    Text("Capture Timeline")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                    HStack {
+                        Image(systemName: "camera")
+                        Text("Capture Timeline")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(10)
                 }
-                .padding(.horizontal)
                 
-                // Captured Time Display
-                if !capturedNumbers.isEmpty {
-                    Text("Captured Time: \(formatTime(numbers: capturedNumbers))")
+                if let timeline = recognizedTimeline {
+                    Text("Captured Time")
                         .font(.headline)
-                        .padding()
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(8)
-                } else if let error = timelineError {
+                        .padding(.top)
+                    
+                    Text(timeline)
+                        .font(.body)
+                }
+                
+                if let error = timelineError {
                     Text(error)
-                        .font(.subheadline)
                         .foregroundColor(.red)
+                        .font(.callout)
                         .padding()
+                }
+                
+                if recognizedTimeline != nil {
+                    Button(action: saveTimeline) {
+                        Text("Save Timeline")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
                 }
             }
             .padding(.bottom, 20)
         }
         .fullScreenCover(isPresented: $showingCamera) {
             CameraView(movie: movie) { numbers in
-                print("Recognized Numbers: \(numbers)") // Debugging
+                Logger.log("Processing captured numbers: \(numbers)", level: .debug)
                 capturedNumbers = numbers
                 recognizedTimeline = formatTime(numbers: numbers)
                 timelineError = nil
@@ -100,9 +102,61 @@ struct TimelineCaptureView: View {
         }
     }
     
+    private func validateCapturedTime(_ numbers: [Int]) -> Bool {
+        Logger.log("Validating captured time: \(numbers)", level: .debug)
+        
+        guard numbers.count >= 2 else {
+            Logger.log("Invalid time format: insufficient numbers", level: .warning)
+            timelineError = "Invalid time format"
+            return false
+        }
+        
+        let hours = numbers[0]
+        let minutes = numbers[1]
+        
+        guard hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60 else {
+            Logger.log("Invalid time values - Hours: \(hours), Minutes: \(minutes)", level: .warning)
+            timelineError = "Invalid time values"
+            return false
+        }
+        
+        Logger.log("Time validation successful", level: .debug)
+        return true
+    }
+    
+    private func saveTimeline() {
+        Logger.log("Attempting to save timeline for movie: \(movie.title)", level: .debug)
+        
+        guard let numbers = capturedNumbers, validateCapturedTime(numbers) else {
+            Logger.log("Cannot save timeline: invalid captured time", level: .warning)
+            return
+        }
+        
+        let seconds = numbers[0] * 3600 + numbers[1] * 60
+        
+        // Create updated movie with the same properties
+        let updatedMovie = Movie(
+            id: movie.id,
+            title: movie.title,
+            cinema: movie.cinema,
+            source: movie.source,
+            posterImage: movie.posterImage,
+            releaseDate: movie.releaseDate
+        )
+        
+        movieDatabase.updateMovie(updatedMovie)
+        Logger.log("Successfully saved timeline. New timestamp: \(formatTime(numbers: numbers))", level: .info)
+        
+        // Reset state
+        capturedNumbers = nil
+        recognizedTimeline = nil
+        timelineError = nil
+        showingCamera = false
+    }
+    
     private func formatTime(numbers: [Int]) -> String {
-        guard numbers.count >= 3 else { return "00:00:00" }
-        return String(format: "%02d:%02d:%02d", numbers[0], numbers[1], numbers[2])
+        guard numbers.count >= 2 else { return "00:00" }
+        return String(format: "%02d:%02d", numbers[0], numbers[1])
     }
 }
 

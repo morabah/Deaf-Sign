@@ -61,8 +61,10 @@ struct SettingsView: View {
             .alert("Delete Movie", isPresented: $showDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
                     if let movie = movieToDelete {
-                        movieDatabase.removeMovie(movie)
-                        movieToDelete = nil
+                        DispatchQueue.main.async {
+                            movieDatabase.removeMovie(movie)
+                            movieToDelete = nil
+                        }
                     }
                 }
                 Button("Cancel", role: .cancel) {
@@ -187,6 +189,7 @@ struct SettingsView: View {
               !newMovieLink.isEmpty,
               isValidURL(newMovieLink) else {
             showInvalidURLAlert = true
+            Logger.log("Invalid URL entered", level: .error)
             return
         }
         
@@ -199,10 +202,12 @@ struct SettingsView: View {
             releaseDate: nil
         )
         
-        // Logging selected type for debugging purposes.
-        os_log("Added movie with source: %{public}@", log: .default, type: .debug, selectedType.rawValue)
+        Logger.log("Added movie with source: \(selectedType.rawValue)", level: .debug)
         
-        movieDatabase.addMovie(movie)
+        DispatchQueue.main.async {
+            movieDatabase.addMovie(movie)
+        }
+        
         resetAddMovieFields()
     }
     
@@ -233,6 +238,7 @@ struct SettingsView: View {
               let newType = editedType,
               isValidURL(editedLink) else {
             showInvalidURLAlert = true
+            Logger.log("Invalid URL entered", level: .error)
             return
         }
         
@@ -245,7 +251,10 @@ struct SettingsView: View {
             releaseDate: originalMovie.releaseDate
         )
         
-        movieDatabase.updateMovie(updatedMovie)
+        DispatchQueue.main.async {
+            movieDatabase.updateMovie(updatedMovie)
+        }
+        
         cancelEditing()
     }
     
@@ -262,4 +271,36 @@ struct SettingsView: View {
         }
         return UIApplication.shared.canOpenURL(url)
     }
+}
+
+extension Logger {
+    static func log(_ message: String, level: LogLevel) {
+        os_log("%{public}@", log: .default, type: level.osLogType, message)
+    }
+    
+    static func handle(_ error: Error, context: String, level: LogLevel) {
+        os_log("%{public}@: %{public}@", log: .default, type: level.osLogType, context, error.localizedDescription)
+    }
+}
+
+extension LogLevel {
+    var osLogType: OSLogType {
+        switch self {
+        case .debug:
+            return .debug
+        case .info:
+            return .info
+        case .warning:
+            return .default
+        case .error:
+            return .error
+        }
+    }
+}
+
+enum LogLevel {
+    case debug
+    case info
+    case warning
+    case error
 }

@@ -75,7 +75,7 @@ struct CinemaView: View {
                         MovieRow(movie: movie)
                             .onTapGesture {
                                 selectedMovie = movie
-                                os_log("Selected movie: %{public}@", log: .default, type: .debug, movie.title)
+                                Logger.log("Selected movie: \(movie.title)", level: .debug)
                             }
                     }
                     .searchable(text: $searchText)
@@ -86,7 +86,7 @@ struct CinemaView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         showSettings = true
-                        os_log("Settings button pressed in CinemaView", log: .default, type: .debug)
+                        Logger.log("Settings button pressed in CinemaView", level: .debug)
                     } label: {
                         HStack {
                             Image(systemName: "gear")
@@ -101,7 +101,7 @@ struct CinemaView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         dismiss()
-                        os_log("CinemaView dismissed", log: .default, type: .debug)
+                        Logger.log("CinemaView dismissed", level: .debug)
                     } label: {
                         HStack {
                             Image(systemName: "xmark.circle.fill")
@@ -113,7 +113,7 @@ struct CinemaView: View {
                 }
             }
             .onAppear {
-                os_log("CinemaView appeared", log: .default, type: .debug)
+                Logger.log("CinemaView appeared", level: .debug)
                 loadCinemaMovies()
             }
             .onChange(of: movieDatabase.movies) { _ in
@@ -134,10 +134,10 @@ struct CinemaView: View {
         
         // Data integrity check
         if cinemaMovies.contains(where: { $0.title.isEmpty }) {
-            os_log("Warning: Found a movie with an empty title.", log: .default, type: .error)
+            Logger.log("Warning: Found a movie with an empty title.", level: .error)
         }
         
-        os_log("Cinema movies loaded. Count: %d", log: .default, type: .debug, cinemaMovies.count)
+        Logger.log("Cinema movies loaded. Count: \(cinemaMovies.count)", level: .debug)
     }
 }
 

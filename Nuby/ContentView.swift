@@ -46,6 +46,7 @@ struct ContentView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
+            Logger.log("ContentView appeared", level: .debug)
             verifyDataIntegrity()
         }
     }
@@ -55,8 +56,8 @@ struct ContentView: View {
     private var topBar: some View {
         HStack {
             Button(action: {
+                Logger.log("Settings button pressed", level: .debug)
                 showSettings = true
-                os_log("Settings button pressed", log: .default, type: .debug)
             }) {
                 Image(systemName: "gear")
                     .resizable()
@@ -155,7 +156,7 @@ struct ContentView: View {
     private var sourceButtons: some View {
         VStack(spacing: 15) {
             Button(action: {
-                os_log("Cinema source button pressed", log: .default, type: .debug)
+                Logger.log("Cinema source button pressed", level: .debug)
                 showCinemaView = true
             }) {
                 Text("Cinema")
@@ -173,7 +174,7 @@ struct ContentView: View {
             }
             
             Button(action: {
-                os_log("Platform source button pressed", log: .default, type: .debug)
+                Logger.log("Platform source button pressed", level: .debug)
                 showPlatformView = true
             }) {
                 Text("Platform")
@@ -227,12 +228,12 @@ struct ContentView: View {
     // MARK: - Helper Methods
 
     private func performSearch(query: String) {
+        Logger.log("Performing search for: \(query)", level: .debug)
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        os_log("Performing search for: %@", log: .default, type: .debug, query)
     }
 
     private func verifyDataIntegrity() {
-        os_log("Verifying data integrity", log: .default, type: .debug)
+        Logger.log("Verifying data integrity", level: .debug)
         // Add data validation logic here
     }
 }

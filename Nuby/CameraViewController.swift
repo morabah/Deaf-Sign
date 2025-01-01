@@ -39,56 +39,68 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     private func checkCameraPermissions() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
+            Logger.log("Camera access authorized", level: .info)
             setupCamera()
         case .notDetermined:
+            Logger.log("Requesting camera access permission", level: .info)
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 if granted {
+                    Logger.log("Camera access permission granted", level: .info)
                     DispatchQueue.main.async {
                         self?.setupCamera()
                     }
                 } else {
-                    print("Camera access denied")
+                    Logger.log("Camera access permission denied", level: .warning)
                 }
             }
-        case .denied, .restricted:
-            print("Camera access denied or restricted")
-        @unknown default:
-            print("Unknown camera permission status")
+        default:
+            Logger.log("Camera access not available", level: .error)
         }
     }
 
     private func setupCamera() {
+        Logger.log("Setting up camera", level: .debug)
         captureSession = AVCaptureSession()
-        captureSession.beginConfiguration()
-
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
-            print("No camera available")
+        
+        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
+            Logger.log("Failed to access video capture device", level: .error)
             return
         }
-
+        
         do {
-            let videoInput = try AVCaptureDeviceInput(device: videoDevice)
+            let videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
             if captureSession.canAddInput(videoInput) {
                 captureSession.addInput(videoInput)
+            } else {
+                Logger.log("Failed to add video input to capture session", level: .error)
+                return
             }
-
-            // Add photo output
+            
             photoOutput = AVCapturePhotoOutput()
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
+            } else {
+                Logger.log("Failed to add photo output to capture session", level: .error)
+                return
             }
-
-            // Add preview layer
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-
-            captureSession.commitConfiguration()
-            captureSession.startRunning()
+            
+            setupPreviewLayer()
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.captureSession.startRunning()
+                Logger.log("Camera capture session started", level: .info)
+            }
         } catch {
-            print("Error setting up camera: \(error)")
+            Logger.handle(error, context: "Failed to initialize camera input", level: .error)
         }
+    }
+
+    private func setupPreviewLayer() {
+        Logger.log("Setting up camera preview layer", level: .debug)
+        previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        previewLayer.frame = view.layer.bounds
     }
 
     private func setupCaptureButton() {
@@ -116,7 +128,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         guard let imageData = photo.fileDataRepresentation(),
               let image = UIImage(data: imageData) else {
-            print("Failed to capture photo")
+            Logger.log("Failed to capture photo", level: .error)
             return
         }
 
@@ -127,13 +139,18 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
 
     private func recognizeTimeline(from image: UIImage) {
         guard let cgImage = image.cgImage else {
-            print("Failed to convert UIImage to CGImage")
+            Logger.log("Failed to convert UIImage to CGImage", level: .error)
             return
         }
 
         let request = VNRecognizeTextRequest { [weak self] request, error in
+            if let error = error {
+                Logger.handle(error, context: "Text recognition failed", level: .error)
+                return
+            }
+
             guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                print("No text recognized")
+                Logger.log("No text recognized in image", level: .warning)
                 return
             }
 
@@ -144,20 +161,16 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
                 }
             }
 
-            // Log recognized text for debugging
-            print("Recognized Text: \(recognizedText)")
+            Logger.log("Recognized text from image: \(recognizedText)", level: .debug)
 
-            // Extract time from recognized text
             let time = self?.extractTime(from: recognizedText) ?? "00:00"
-            print("Extracted Time: \(time)") // Debugging
+            Logger.log("Extracted time: \(time)", level: .debug)
 
             let numbers = self?.convertTimeToNumbers(time) ?? [0, 0, 0]
-            print("Converted Numbers: \(numbers)") // Debugging
+            Logger.log("Converted numbers: \(numbers)", level: .debug)
 
             DispatchQueue.main.async {
-                // Dismiss the camera view
                 self?.dismiss(animated: true) {
-                    // Pass the recognized time back to the parent view
                     self?.onNumbersDetected(numbers)
                 }
             }
@@ -170,20 +183,19 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
             do {
                 try requestHandler.perform([request])
             } catch {
-                print("Failed to perform text recognition: \(error)")
+                Logger.handle(error, context: "Failed to perform text recognition", level: .error)
             }
         }
     }
 
     private func extractTime(from text: String) -> String {
-        // More flexible patterns to match various time formats
-        let patterns = [
-            "\\b\\d{1,2}[:.\\s]\\d{2}\\s*(AM|PM|am|pm)?\\b",  // Matches "2:20 AM", "2.20 AM", "2 20 AM"
-            "\\b(\\d{1,2})[:.\\s](\\d{2})\\b",                // Matches "2:20", "2.20", "2 20"
-            "\\b\\d{4}\\b"                                     // Matches "0220" for 2:20
-        ]
+        Logger.log("Attempting to extract time from text: \(text)", level: .debug)
         
-        print("Attempting to extract time from text: \(text)")
+        let patterns = [
+            "\\b\\d{1,2}[:.\\s]\\d{2}\\s*(AM|PM|am|pm)?\\b",
+            "\\b(\\d{1,2})[:.\\s](\\d{2})\\b",
+            "\\b\\d{4}\\b"
+        ]
         
         for (index, pattern) in patterns.enumerated() {
             do {
@@ -193,20 +205,20 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
                 if let match = regex.firstMatch(in: text, options: [], range: range),
                    let range = Range(match.range, in: text) {
                     let timeStr = String(text[range])
-                    print("Match found with pattern \(index): \(timeStr)")
+                    Logger.log("Time pattern \(index) matched: \(timeStr)", level: .debug)
                     return timeStr
                 }
             } catch {
-                print("Regex error with pattern \(index): \(error)")
+                Logger.handle(error, context: "Regex pattern matching failed", level: .error)
             }
         }
         
-        print("No time pattern matched in the text")
+        Logger.log("No time pattern matched in the text", level: .warning)
         return "00:00"
     }
     
     private func convertTimeToNumbers(_ time: String) -> [Int] {
-        print("Converting time string: \(time)")
+        Logger.log("Converting time string: \(time)", level: .debug)
         var numbers = [0, 0, 0] // [hours, minutes, seconds]
         
         // Remove any whitespace and convert to lowercase
@@ -216,7 +228,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
         if cleanTime.count == 4, let timeInt = Int(cleanTime) {
             numbers[0] = timeInt / 100  // Hours
             numbers[1] = timeInt % 100  // Minutes
-            print("Parsed 4-digit time: \(numbers[0]):\(numbers[1])")
+            Logger.log("Parsed 4-digit time: \(numbers[0]):\(numbers[1])", level: .debug)
             return numbers
         }
         
@@ -224,7 +236,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
         let components = cleanTime.components(separatedBy: CharacterSet(charactersIn: ": ."))
             .filter { !$0.isEmpty }
         
-        print("Time components: \(components)")
+        Logger.log("Time components: \(components)", level: .debug)
         
         if components.count >= 2 {
             // Extract hours and minutes
@@ -245,7 +257,7 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
             }
         }
         
-        print("Final converted numbers: \(numbers)")
+        Logger.log("Final converted numbers: \(numbers)", level: .debug)
         return numbers
     }
 

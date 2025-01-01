@@ -15,6 +15,9 @@ struct NubyApp: App {
     /// Manages the movie database across the entire application
     @StateObject private var movieDatabase = MovieDatabase()
     
+    /// State for showing onboarding
+    @State private var showingOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    
     /// The main scene of the application
     /// Configures the initial view and provides app-wide environment objects
     var body: some Scene {
@@ -23,12 +26,17 @@ struct NubyApp: App {
             let _ = Logger.log("Nuby app launched", level: .info)
             
             // Initial view with shared movie database
-            OnboardingView()
-                .environmentObject(movieDatabase)
-                .onAppear {
-                    // Additional logging for app initialization
-                    Logger.log("Initializing movie database", level: .debug)
-                }
+            if showingOnboarding {
+                OnboardingView(isPresented: $showingOnboarding)
+                    .environmentObject(movieDatabase)
+                    .onAppear {
+                        // Additional logging for app initialization
+                        Logger.log("Initializing movie database", level: .debug)
+                    }
+            } else {
+                ContentView()
+                    .environmentObject(movieDatabase)
+            }
         }
     }
     

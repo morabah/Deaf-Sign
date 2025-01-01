@@ -41,6 +41,7 @@ public struct Movie: Identifiable, Codable, Equatable, Hashable {
     public private(set) var posterImage: String?
     public private(set) var releaseDate: Date?
     
+    
     private enum CodingKeys: String, CodingKey {
         case id, title, cinema, source, posterImage, releaseDate
     }
