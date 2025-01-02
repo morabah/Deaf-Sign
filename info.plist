@@ -3,8 +3,22 @@
 <plist version="1.0">
 <dict>
 	<key>LastAccessedDate</key>
-	<date>2025-01-02T02:30:00Z</date>
+	<date>2025-01-02T01:43:32Z</date>
 	<key>WorkspacePath</key>
 	<string>/Volumes/Rabah_SSD/deaf sign 3/Deaf-Sign/Nuby.xcodeproj</string>
+
+	<key>GIDClientID</key>
+	<string>320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239.apps.googleusercontent.com</string>
+
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>com.googleusercontent.apps.320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239</string>
+        </array>
+    </dict>
+</array>
+	
 </dict>
 </plist>

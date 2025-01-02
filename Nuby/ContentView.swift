@@ -2,7 +2,8 @@ import SwiftUI
 import os.log
 
 struct ContentView: View {
-    @StateObject private var movieDatabase = MovieDatabase()
+    @EnvironmentObject var movieDatabase: MovieDatabase
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var searchText = ""
     @State private var showSettings = false
     @State private var showCinemaView = false
@@ -33,8 +34,20 @@ struct ContentView: View {
                         searchResultsView
                     }
                     
-                    // Source Buttons
-                    sourceButtons
+                    // Movie Source Buttons
+                    HStack(spacing: padding) {
+                        sourceButton(
+                            title: "Cinema",
+                            systemImage: "film",
+                            action: { showCinemaView = true }
+                        )
+                        
+                        sourceButton(
+                            title: "Platform",
+                            systemImage: "tv",
+                            action: { showPlatformView = true }
+                        )
+                    }
                     
                     // Last 5 Added Movies
                     recentMoviesView
@@ -43,7 +56,19 @@ struct ContentView: View {
                 }
                 .padding(.bottom)
             }
-            .navigationBarHidden(true)
+            .navigationBarItems(trailing: settingsButton)
+            .navigationBarHidden(false)
+            .sheet(isPresented: $showSettings) {
+                SettingsView(movieDatabase: movieDatabase)
+            }
+            .sheet(isPresented: $showCinemaView) {
+                CinemaView()
+                    .environmentObject(movieDatabase)
+            }
+            .sheet(isPresented: $showPlatformView) {
+                PlatformView()
+                    .environmentObject(movieDatabase)
+            }
         }
         .onAppear {
             Logger.log("ContentView appeared", level: .debug)
@@ -67,9 +92,6 @@ struct ContentView: View {
                     .background(Color.blue.opacity(buttonOpacity))
                     .clipShape(Circle())
                     .accessibilityLabel("Open Settings")
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView(movieDatabase: movieDatabase)
             }
             
             Spacer()
@@ -153,48 +175,6 @@ struct ContentView: View {
         .transition(.opacity)
     }
 
-    private var sourceButtons: some View {
-        VStack(spacing: 15) {
-            Button(action: {
-                Logger.log("Cinema source button pressed", level: .debug)
-                showCinemaView = true
-            }) {
-                Text("Cinema")
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue.opacity(buttonOpacity))
-                    .cornerRadius(cornerRadius)
-                    .accessibilityLabel("Open Cinema View")
-            }
-            .sheet(isPresented: $showCinemaView) {
-                CinemaView()
-                    .environmentObject(movieDatabase)
-            }
-            
-            Button(action: {
-                Logger.log("Platform source button pressed", level: .debug)
-                showPlatformView = true
-            }) {
-                Text("Platform")
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue.opacity(buttonOpacity))
-                    .cornerRadius(cornerRadius)
-                    .accessibilityLabel("Open Platform View")
-            }
-            .sheet(isPresented: $showPlatformView) {
-                PlatformView()
-                    .environmentObject(movieDatabase)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.top, 20)
-    }
-
     private var recentMoviesView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Last 5 Added Movies")
@@ -225,6 +205,37 @@ struct ContentView: View {
         .padding(.top, 20)
     }
 
+    private func sourceButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: systemImage)
+                    .imageScale(.large)
+                
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.medium)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.blue.opacity(buttonOpacity))
+            .cornerRadius(cornerRadius)
+        }
+    }
+
+    private var settingsButton: some View {
+        HStack {
+            Button(action: { showSettings = true }) {
+                Image(systemName: "gear")
+                    .imageScale(.large)
+            }
+            
+            Button(action: { authManager.signOut() }) {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .imageScale(.large)
+            }
+        }
+    }
+
     // MARK: - Helper Methods
 
     private func performSearch(query: String) {
@@ -241,5 +252,7 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(MovieDatabase())
+            .environmentObject(AuthenticationManager.shared)
     }
 }

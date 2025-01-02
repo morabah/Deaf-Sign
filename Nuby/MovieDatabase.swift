@@ -5,7 +5,7 @@ import os.log
 class MovieDatabase: ObservableObject {
     @Published var movies: [Movie] = []
     @AppStorage("savedMovies") private var savedMoviesData: Data = Data()
-    private let maxMoviesLimit = 100
+    private let maxMoviesLimit = 200
 
     init() {
         loadMovies()

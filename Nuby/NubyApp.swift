@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import GoogleSignIn
 
 /// The main application struct for the Nuby app
 /// Responsible for setting up the initial app state and environment
@@ -14,6 +15,9 @@ import Foundation
 struct NubyApp: App {
     /// Manages the movie database across the entire application
     @StateObject private var movieDatabase = MovieDatabase()
+    
+    /// Manages authentication across the entire application
+    @StateObject private var authManager = AuthenticationManager.shared
     
     /// State for showing onboarding
     @State private var showingOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
@@ -25,17 +29,23 @@ struct NubyApp: App {
             // Log app launch
             let _ = Logger.log("Nuby app launched", level: .info)
             
-            // Initial view with shared movie database
-            if showingOnboarding {
-                OnboardingView(isPresented: $showingOnboarding)
-                    .environmentObject(movieDatabase)
-                    .onAppear {
-                        // Additional logging for app initialization
-                        Logger.log("Initializing movie database", level: .debug)
+            Group {
+                if authManager.isAuthenticated {
+                    if showingOnboarding {
+                        OnboardingView(isPresented: $showingOnboarding)
+                            .environmentObject(movieDatabase)
+                    } else {
+                        ContentView()
+                            .environmentObject(movieDatabase)
                     }
-            } else {
-                ContentView()
-                    .environmentObject(movieDatabase)
+                } else {
+                    LoginView()
+                }
+            }
+            .environmentObject(authManager)
+            .onAppear {
+                // Additional logging for app initialization
+                Logger.log("Initializing app components", level: .debug)
             }
         }
     }
@@ -45,6 +55,14 @@ struct NubyApp: App {
     init() {
         // Configure any global settings or perform initial setup
         configureAppearance()
+        
+        // Configure Google Sign-In
+        guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String else {
+            Logger.log("Failed to get Google Sign-In client ID", level: .error)
+            return
+        }
+        
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
     }
     
     /// Configures the global appearance of the app
