@@ -3,7 +3,7 @@ import GoogleSignIn
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
-    @StateObject private var authManager = AuthenticationManager.shared
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var email = ""
     @State private var password = ""
     @State private var showingAlert = false
@@ -32,11 +32,17 @@ struct LoginView: View {
                         .textContentType(.emailAddress)
                         .autocapitalization(.none)
                         .padding(.horizontal)
+                        .onChange(of: email) { _, newValue in
+                            validateEmail(newValue)
+                        }
                     
                     SecureField("Password", text: $password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .textContentType(.password)
                         .padding(.horizontal)
+                        .onChange(of: password) { _, newValue in
+                            validatePassword(newValue)
+                        }
                     
                     Button(action: handleLogin) {
                         Text("Sign In")
@@ -138,6 +144,14 @@ struct LoginView: View {
         // For now, just show an error
         alertMessage = "Email/password login not implemented yet. Please use Google Sign-In."
         showingAlert = true
+    }
+    
+    private func validateEmail(_ email: String) {
+        // Add email validation logic here
+    }
+    
+    private func validatePassword(_ password: String) {
+        // Add password validation logic here
     }
 }
 

@@ -22,8 +22,6 @@ struct NubyApp: App {
     /// State for showing onboarding
     @State private var showingOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
     
-    /// The main scene of the application
-    /// Configures the initial view and provides app-wide environment objects
     var body: some Scene {
         WindowGroup {
             // Log app launch
@@ -44,33 +42,36 @@ struct NubyApp: App {
             }
             .environmentObject(authManager)
             .onAppear {
-                // Additional logging for app initialization
-                Logger.log("Initializing app components", level: .debug)
+                // Configure app on first launch
+                configureGoogleSignIn()
+                configureAppearance()
             }
         }
     }
     
-    /// Initializer for the app
-    /// Can be used for any global setup or configuration
-    init() {
-        // Configure any global settings or perform initial setup
-        configureAppearance()
-        
-        // Configure Google Sign-In
+    private func configureGoogleSignIn() {
         guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String else {
             Logger.log("Failed to get Google Sign-In client ID", level: .error)
             return
         }
         
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        
+        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+            if let user = user {
+                DispatchQueue.main.async {
+                    AuthenticationManager.shared.currentUser = user
+                    AuthenticationManager.shared.isAuthenticated = true
+                    Logger.log("Restored previous Google Sign-In session", level: .info)
+                }
+            } else if let error = error {
+                Logger.log("Failed to restore Google Sign-In: \(error.localizedDescription)", level: .error)
+            }
+        }
     }
     
-    /// Configures the global appearance of the app
     private func configureAppearance() {
-        // Log appearance configuration
         Logger.log("Configuring app appearance", level: .debug)
-        
-        // Example: Set a global accent color or other UI configurations
         UINavigationBar.appearance().largeTitleTextAttributes = [
             .foregroundColor: UIColor.systemBlue
         ]

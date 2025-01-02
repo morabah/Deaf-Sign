@@ -40,40 +40,37 @@ class AuthenticationManager: ObservableObject {
     static let shared = AuthenticationManager()
     
     private init() {
-        // Check for existing sign-in
-        if let user = GIDSignIn.sharedInstance.currentUser {
-            self.currentUser = user
-            self.isAuthenticated = true
-        }
+        // Initial state will be set by NubyApp's configureGoogleSignIn
     }
     
     func signInWithGoogle() {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            Logger.log("No root view controller found", level: .error)
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else {
             self.authError = .noRootViewController
             return
         }
         
         GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { [weak self] result, error in
-            if let error = error {
-                Logger.log("Google Sign-In error: \(error.localizedDescription)", level: .error)
-                self?.authError = .googleSignInFailed(error.localizedDescription)
-                return
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.authError = .googleSignInFailed(error.localizedDescription)
+                    Logger.log("Google Sign-In failed: \(error.localizedDescription)", level: .error)
+                    return
+                }
+                
+                guard let result = result else {
+                    self?.authError = .noResult
+                    return
+                }
+                
+                self?.currentUser = result.user
+                self?.isAuthenticated = true
+                Logger.log("Successfully signed in with Google", level: .info)
             }
-            
-            guard let result = result else {
-                Logger.log("No result from Google Sign-In", level: .error)
-                self?.authError = .noResult
-                return
-            }
-            
-            self?.currentUser = result.user
-            self?.isAuthenticated = true
-            Logger.log("Successfully signed in with Google", level: .info)
         }
     }
-    
+
     func signOut() {
         GIDSignIn.sharedInstance.signOut()
         currentUser = nil

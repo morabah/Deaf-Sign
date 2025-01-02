@@ -20,7 +20,7 @@ struct ContentView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: padding) {
-                    // Top Bar
+                    // Top Bar with Welcome Message
                     topBar
                     
                     // Section Title
@@ -79,31 +79,41 @@ struct ContentView: View {
     // MARK: - Subviews
 
     private var topBar: some View {
-        HStack {
-            Button(action: {
-                Logger.log("Settings button pressed", level: .debug)
-                showSettings = true
-            }) {
-                Image(systemName: "gear")
-                    .resizable()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.blue)
-                    .padding(8)
-                    .background(Color.blue.opacity(buttonOpacity))
-                    .clipShape(Circle())
-                    .accessibilityLabel("Open Settings")
+        VStack(spacing: 8) {
+            // Welcome message
+            if let userName = authManager.currentUser?.profile?.name {
+                Text("Hi, \(userName)!")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .accessibilityLabel("Welcome message for \(userName)")
             }
             
-            Spacer()
-            
-            Text("📦 Nuby")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .accessibilityLabel("App title: Nuby")
-            
-            Spacer()
+            HStack {
+                Text("📦 Nuby")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .accessibilityLabel("App title: Nuby")
+                
+                Spacer()
+                
+                Button(action: {
+                    Logger.log("Settings button pressed", level: .debug)
+                    showSettings = true
+                }) {
+                    Image(systemName: "gear")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.blue)
+                        .padding(8)
+                        .background(Color.blue.opacity(buttonOpacity))
+                        .clipShape(Circle())
+                        .accessibilityLabel("Open Settings")
+                }
+            }
+            .padding(.horizontal)
         }
-        .padding(.horizontal)
         .padding(.top)
     }
 
@@ -129,7 +139,7 @@ struct ContentView: View {
                 .onSubmit {
                     performSearch(query: searchText)
                 }
-                .onChange(of: searchText) { newValue in
+                .onChange(of: searchText) { _, newValue in
                     searchDebounceTimer?.invalidate()
                     searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
                         performSearch(query: newValue)
@@ -224,11 +234,6 @@ struct ContentView: View {
 
     private var settingsButton: some View {
         HStack {
-            Button(action: { showSettings = true }) {
-                Image(systemName: "gear")
-                    .imageScale(.large)
-            }
-            
             Button(action: { authManager.signOut() }) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                     .imageScale(.large)
