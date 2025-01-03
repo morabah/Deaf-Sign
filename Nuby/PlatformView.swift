@@ -90,7 +90,7 @@ struct PlatformView: View {
                 os_log("PlatformView appeared", log: .default, type: .debug)
                 loadPlatformMovies()
             }
-            .onChange(of: movieDatabase.movies) { _ in
+            .onChange(of: movieDatabase.movies, initial: true) { oldValue, newValue in
                 loadPlatformMovies()
             }
             .sheet(isPresented: $showSettings) {

@@ -49,17 +49,6 @@ struct MovieRow: View {
     }
     
     private func timelineCaptureViewHandler(movie: Movie) -> AnyView {
-        do {
-            return AnyView(TimelineCaptureView(movie: movie))
-        } catch {
-            os_log("Failed to initialize TimelineCaptureView: %{public}@", type: .error, error.localizedDescription)
-            return AnyView(
-                Text("An error occurred while opening the timeline view.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            )
-        }
+        AnyView(TimelineCaptureView(movie: movie))
     }
 }
-
-

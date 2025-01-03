@@ -109,7 +109,7 @@ struct CinemaView: View {
                 Logger.log("CinemaView appeared", level: .debug)
                 loadCinemaMovies()
             }
-            .onChange(of: movieDatabase.movies) { _ in
+            .onChange(of: movieDatabase.movies, initial: true) { oldValue, newValue in
                 loadCinemaMovies()
             }
             .sheet(isPresented: $showSettings) {
@@ -135,5 +135,3 @@ struct CinemaView: View {
 }
 
 // MARK: - Supporting Views
-
-

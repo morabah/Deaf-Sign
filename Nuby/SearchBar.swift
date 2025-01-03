@@ -41,7 +41,7 @@ struct SearchBar: View {
                         movieManager.searchMovies(query: "")
                     }
                 })
-                .onChange(of: text) { newValue in
+                .onChange(of: text, initial: true) { oldValue, newValue in
                     debounceSearch(newValue)
                 }
                 .autocapitalization(.none)

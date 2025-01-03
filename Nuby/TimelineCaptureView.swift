@@ -177,11 +177,11 @@ struct TimelineCaptureView: View {
             totalDelay = displayTimestamp?.timeIntervalSince(captureTime)
             Logger.log("Capture to display delay: \(totalDelay ?? 0) seconds", level: .debug)
             
-            let capturedSeconds = (numbers[0] * 60) + numbers[1]
-            let totalSeconds = Double(capturedSeconds) + (totalDelay ?? 0.0)
+            let hours = numbers[0]
+            let minutes = numbers[1]
             
             if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url) {
-                webViewStore.seek(to: totalSeconds)
+                webViewStore.seek(to: Double(hours * 3600 + minutes * 60))
             }
         }
         
@@ -195,8 +195,6 @@ struct TimelineCaptureView: View {
             Logger.log("Cannot save timeline: invalid captured time", level: .warning)
             return
         }
-        
-        let seconds = numbers[0] * 3600 + numbers[1] * 60
         
         let updatedMovie = Movie(
             id: movie.id,
@@ -222,7 +220,9 @@ struct TimelineCaptureView: View {
     
     private func enableScreenRotation() {
         UIDevice.current.setValue(UIDeviceOrientation.unknown.rawValue, forKey: "orientation")
-        UIViewController.attemptRotationToDeviceOrientation()
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            windowScene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        }
     }
     
     private func setupOrientationChangeNotification() {

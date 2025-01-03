@@ -43,7 +43,7 @@ struct LoginView: View {
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
-                            .onChange(of: email) { newValue in
+                            .onChange(of: email, initial: true) { oldValue, newValue in
                                 validateEmail(newValue)
                             }
                         
@@ -51,7 +51,7 @@ struct LoginView: View {
                             .padding()
                             .background(Color.white.opacity(0.8))
                             .cornerRadius(10)
-                            .onChange(of: password) { newValue in
+                            .onChange(of: password, initial: true) { oldValue, newValue in
                                 validatePassword(newValue)
                             }
                         
@@ -130,16 +130,11 @@ struct LoginView: View {
             .sheet(isPresented: $isSigningUp) {
                 SignUpView()
             }
-            .onChange(of: authManager.isAuthenticated) { isAuthenticated in
-                if isAuthenticated {
-                    presentationMode.wrappedValue.dismiss()
-                }
+            .onChange(of: authManager.isAuthenticated, initial: true) { oldValue, newValue in
+                handleAuthenticationChange(newValue)
             }
-            .onChange(of: authManager.authError) { error in
-                if let error = error {
-                    alertMessage = error.localizedDescription
-                    showingAlert = true
-                }
+            .onChange(of: authManager.authError, initial: true) { oldValue, newValue in
+                handleAuthError(newValue)
             }
         }
         .onAppear {
@@ -168,6 +163,19 @@ struct LoginView: View {
     
     private func validatePassword(_ password: String) {
         // Add password validation logic here
+    }
+    
+    private func handleAuthenticationChange(_ newValue: Bool) {
+        if newValue {
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+    
+    private func handleAuthError(_ newValue: Error?) {
+        if let error = newValue {
+            alertMessage = error.localizedDescription
+            showingAlert = true
+        }
     }
 }
 
