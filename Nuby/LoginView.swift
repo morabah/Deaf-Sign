@@ -1,108 +1,124 @@
 import SwiftUI
 import GoogleSignIn
+import os.log
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var authManager: AuthenticationManager
+    
     @State private var email = ""
     @State private var password = ""
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var isSigningUp = false
-
+    
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                // App Logo
-                Image(systemName: "hand.wave.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 100, height: 100)
-                    .foregroundColor(.blue)
-                    .padding(.top, 50)
+            ZStack {
+                // Background Gradient
+                LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .edgesIgnoringSafeArea(.all)
                 
-                Text("Welcome to Nuby")
-                    .font(.largeTitle)
-                    .bold()
-                
-                // Sign In Form
-                VStack(spacing: 15) {
-                    TextField("Email", text: $email)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textContentType(.emailAddress)
-                        .autocapitalization(.none)
-                        .padding(.horizontal)
-                        .onChange(of: email) { _, newValue in
-                            validateEmail(newValue)
-                        }
+                VStack(spacing: 20) {
+                    // App Logo
+                    Image(systemName: "film.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.white)
+                        .padding(.top, 50)
                     
-                    SecureField("Password", text: $password)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textContentType(.password)
-                        .padding(.horizontal)
-                        .onChange(of: password) { _, newValue in
-                            validatePassword(newValue)
-                        }
+                    // Welcome Message
+                    Text("Welcome to Nuby")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
                     
-                    Button(action: handleLogin) {
-                        Text("Sign In")
-                            .frame(maxWidth: .infinity)
+                    // Login Form
+                    VStack(spacing: 15) {
+                        TextField("Email", text: $email)
                             .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
+                            .background(Color.white.opacity(0.8))
                             .cornerRadius(10)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .onChange(of: email) { newValue in
+                                validateEmail(newValue)
+                            }
+                        
+                        SecureField("Password", text: $password)
+                            .padding()
+                            .background(Color.white.opacity(0.8))
+                            .cornerRadius(10)
+                            .onChange(of: password) { newValue in
+                                validatePassword(newValue)
+                            }
+                        
+                        Button(action: handleLogin) {
+                            Text("Sign In")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                                .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 2)
+                        }
+                        .padding(.top, 10)
                     }
-                    .padding(.horizontal)
-                }
-                .padding(.vertical)
-                
-                // Divider with "or"
-                HStack {
-                    VStack { Divider() }.padding(.horizontal)
-                    Text("or")
-                        .foregroundColor(.gray)
-                    VStack { Divider() }.padding(.horizontal)
-                }
-                
-                // Google Sign In Button
-                Button(action: { authManager.signInWithGoogle() }) {
+                    .padding(.horizontal, 30)
+                    
+                    // Divider with "or"
                     HStack {
-                        Image("google_logo") // Add this image to your assets
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                        Text("Continue with Google")
+                        VStack { Divider().background(Color.white) }
+                        Text("or")
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                        VStack { Divider().background(Color.white) }
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.white)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .padding(.horizontal)
-                
-                // Sign Up Link
-                HStack {
-                    Text("Don't have an account?")
-                    Button(action: { isSigningUp = true }) {
-                        Text("Sign Up")
-                            .foregroundColor(.blue)
-                            .bold()
+                    .padding(.horizontal, 30)
+                    
+                    // Google Sign In Button
+                    Button(action: { authManager.signInWithGoogle() }) {
+                        HStack {
+                            Image("google_logo") // Add this image to your assets
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                            Text("Continue with Google")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(color: .gray.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
+                    .padding(.horizontal, 30)
+                    
+                    // Sign Up Link
+                    HStack {
+                        Text("Don't have an account?")
+                            .foregroundColor(.white)
+                        Button(action: { isSigningUp = true }) {
+                            Text("Sign Up")
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                        }
+                    }
+                    .padding(.top, 20)
+                    
+                    Spacer()
                 }
-                .padding(.top)
-                
-                Spacer()
             }
             .navigationBarItems(
                 leading: Button("Cancel") {
                     Logger.log("Login cancelled", level: .debug)
                     presentationMode.wrappedValue.dismiss()
                 }
+                .foregroundColor(.white)
             )
             .alert(isPresented: $showingAlert) {
                 Alert(
@@ -168,37 +184,41 @@ struct SignUpView: View {
             VStack(spacing: 20) {
                 Text("Create Account")
                     .font(.largeTitle)
-                    .bold()
+                    .fontWeight(.bold)
                     .padding(.top, 50)
                 
                 VStack(spacing: 15) {
                     TextField("Email", text: $email)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textContentType(.emailAddress)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .keyboardType(.emailAddress)
                         .autocapitalization(.none)
-                        .padding(.horizontal)
+                        .disableAutocorrection(true)
                     
                     SecureField("Password", text: $password)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textContentType(.newPassword)
-                        .padding(.horizontal)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
                     
                     SecureField("Confirm Password", text: $confirmPassword)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textContentType(.newPassword)
-                        .padding(.horizontal)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
                     
                     Button(action: handleSignUp) {
                         Text("Sign Up")
+                            .font(.headline)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color.blue)
-                            .foregroundColor(.white)
                             .cornerRadius(10)
+                            .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
-                    .padding(.horizontal)
+                    .padding(.top, 10)
                 }
-                .padding(.vertical)
+                .padding(.horizontal, 30)
                 
                 Spacer()
             }

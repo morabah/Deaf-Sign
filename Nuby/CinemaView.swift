@@ -18,32 +18,9 @@ import os.log
 /// - Responsive layout
 /// - Accessible elements
 ///
-/// Components:
-/// - Settings button in a toolbar
-/// - Filterable movie list
-/// - Empty and loading states
-///
-/// Interaction:
-/// - Tap a movie to select it
-/// - Access timeline capture from a selected movie
-/// - Open settings
-///
-/// Technical Details:
-/// - Uses SwiftUI
-/// - Integrates with MovieDatabase
-/// - Filters movies based on search text
-///
-/// Performance:
-/// - Loads movies lazily
-/// - Filters on the client side
-///
-/// Error Handling and Integrity:
-/// - If movie data is empty, shows a loading or empty state
-/// - Logs actions for debugging
-///
-/// Version: 1.0.1
-/// Author: Nuby Development Team
-/// Copyright: 2024 Nuby App
+/// - Version: 1.0.1
+/// - Author: Nuby Development Team
+/// - Copyright: 2024 Nuby App
 
 struct CinemaView: View {
     @Environment(\.dismiss) private var dismiss
@@ -63,22 +40,38 @@ struct CinemaView: View {
     
     var body: some View {
         NavigationStack {
-            Group {
-                if cinemaMovies.isEmpty {
-                    ProgressView("Loading movies...")
-                        .padding()
-                } else if filteredMovies.isEmpty {
-                    Text("No movies found")
-                        .padding()
-                } else {
-                    List(filteredMovies) { movie in
-                        MovieRow(movie: movie)
-                            .onTapGesture {
-                                selectedMovie = movie
-                                Logger.log("Selected movie: \(movie.title)", level: .debug)
-                            }
+            ZStack {
+                // Background
+                Color(.systemGroupedBackground)
+                    .edgesIgnoringSafeArea(.all)
+                
+                VStack(spacing: 0) {
+                    // Search Bar
+                    SearchBar(text: $searchText, movieManager: MovieManager(movieDatabase: movieDatabase))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    
+                    // Movie List
+                    if cinemaMovies.isEmpty {
+                        ProgressView("Loading movies...")
+                            .padding()
+                    } else if filteredMovies.isEmpty {
+                        Text("No movies found")
+                            .foregroundColor(.gray)
+                            .padding()
+                    } else {
+                        List(filteredMovies) { movie in
+                            MovieRow(movie: movie)
+                                .onTapGesture {
+                                    selectedMovie = movie
+                                    Logger.log("Selected movie: \(movie.title)", level: .debug)
+                                }
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                .listRowBackground(Color.clear)
+                        }
+                        .listStyle(.plain)
+                        .background(Color(.systemGroupedBackground))
                     }
-                    .searchable(text: $searchText)
                 }
             }
             .navigationTitle("📦 Nuby Cinema")
@@ -141,6 +134,6 @@ struct CinemaView: View {
     }
 }
 
-#Preview {
-    CinemaView()
-}
+// MARK: - Supporting Views
+
+

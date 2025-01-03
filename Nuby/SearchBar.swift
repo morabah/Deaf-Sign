@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import os.log
 
 /// SearchBar is a custom SwiftUI component for searching and filtering movies in the Nuby app.
 ///
@@ -21,75 +22,80 @@ import Combine
 
 struct SearchBar: View {
     @Binding var text: String
-    @State private var isEditing = false
-    
-    // Reference to MovieManager for search
     @ObservedObject var movieManager: MovieManager
+    
+    @State private var isEditing = false
+    @State private var debounceTimer: Timer?
     
     var body: some View {
         HStack {
+            // Search Icon and Text Field
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.gray)
+                    .padding(.leading, 8)
                 
-                TextField("Search movies...", text: $text, onEditingChanged: { isEditing in
-                    self.isEditing = isEditing
-                    
-                    // If editing ends and text is empty, reset to all movies
-                    if !isEditing && text.isEmpty {
+                TextField("Search movies...", text: $text, onEditingChanged: { editing in
+                    isEditing = editing
+                    if !editing && text.isEmpty {
                         movieManager.searchMovies(query: "")
                     }
                 })
-                .onChange(of: text) { _, newValue in
-                    // Log the search attempt with more context
-                    Logger.log("SearchBar - Text changed: \(newValue), Editing: \(isEditing)", level: .debug)
-                    
-                    // Directly call search on MovieManager
-                    // Ensure this is called even for short queries
-                    movieManager.searchMovies(query: newValue)
+                .onChange(of: text) { newValue in
+                    debounceSearch(newValue)
                 }
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
+                .padding(.vertical, 8)
                 
+                // Clear Button
                 if !text.isEmpty {
-                    Button(action: {
-                        // Log the clear action
-                        Logger.log("SearchBar - Clearing search text", level: .debug)
-                        
-                        text = ""
-                        movieManager.searchMovies(query: "")
-                    }) {
+                    Button(action: clearSearch) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.gray)
-                            .frame(width: 20, height: 20)
+                            .padding(.trailing, 8)
                     }
+                    .transition(.opacity)
                 }
             }
-            .padding(8)
             .background(Color(.systemGray6))
             .cornerRadius(10)
-            .padding(.horizontal)
+            .animation(.easeInOut, value: text.isEmpty)
             
+            // Cancel Button
             if isEditing {
                 Button("Cancel") {
-                    // Log the cancel action
-                    Logger.log("SearchBar - Cancelling search", level: .debug)
-                    
-                    text = ""
-                    movieManager.searchMovies(query: "")
+                    clearSearch()
                     isEditing = false
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
-                                                  to: nil, from: nil, for: nil)
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
-                .padding(.trailing)
                 .transition(.move(edge: .trailing))
-                .animation(.default, value: isEditing)
+                .animation(.easeInOut, value: isEditing)
             }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+    }
+    
+    /// Debounces the search query to reduce unnecessary API calls
+    private func debounceSearch(_ query: String) {
+        debounceTimer?.invalidate()
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+            Logger.log("SearchBar - Performing search for: \(query)", level: .debug)
+            movieManager.searchMovies(query: query)
+        }
+    }
+    
+    /// Clears the search text and resets the search results
+    private func clearSearch() {
+        text = ""
+        movieManager.searchMovies(query: "")
+        Logger.log("SearchBar - Search cleared", level: .debug)
     }
 }
 
-// Search error types
+// MARK: - Search Error Types
+
 enum SearchError: LocalizedError {
     case tooShort
     case tooLong

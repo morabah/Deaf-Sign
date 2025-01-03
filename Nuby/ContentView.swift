@@ -4,60 +4,50 @@ import os.log
 struct ContentView: View {
     @EnvironmentObject var movieDatabase: MovieDatabase
     @EnvironmentObject var authManager: AuthenticationManager
+    
     @State private var searchText = ""
     @State private var showSettings = false
     @State private var showCinemaView = false
     @State private var showPlatformView = false
     @State private var searchDebounceTimer: Timer?
     @FocusState private var isInputActive: Bool
-
-    // Constants
-    private let cornerRadius: CGFloat = 8
-    private let padding: CGFloat = 16
-    private let buttonOpacity: Double = 0.1
-
+    
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: padding) {
-                    // Top Bar with Welcome Message
-                    topBar
-                    
-                    // Section Title
-                    sectionTitle("Choose Movie Source")
-                    
-                    // Search Bar
-                    searchBar
-                    
-                    // Search Results
-                    if !searchText.isEmpty {
-                        searchResultsView
-                    }
-                    
-                    // Movie Source Buttons
-                    HStack(spacing: padding) {
-                        sourceButton(
-                            title: "Cinema",
-                            systemImage: "film",
-                            action: { showCinemaView = true }
-                        )
+            ZStack {
+                // Background
+                Color(.systemGroupedBackground)
+                    .edgesIgnoringSafeArea(.all)
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Top Bar
+                        topBar
                         
-                        sourceButton(
-                            title: "Platform",
-                            systemImage: "tv",
-                            action: { showPlatformView = true }
-                        )
+                        // Search Bar
+                        searchBar
+                        
+                        // Search Results
+                        if !searchText.isEmpty {
+                            searchResultsView
+                        }
+                        
+                        // Movie Source Buttons
+                        HStack(spacing: 20) {
+                            sourceButton(title: "Cinema", systemImage: "film", action: { showCinemaView = true })
+                            sourceButton(title: "Platform", systemImage: "tv", action: { showPlatformView = true })
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Recent Movies Section
+                        recentMoviesView
+                        
+                        Spacer()
                     }
-                    
-                    // Last 5 Added Movies
-                    recentMoviesView
-                    
-                    Spacer()
+                    .padding(.vertical, 20)
                 }
-                .padding(.bottom)
             }
             .navigationBarItems(trailing: settingsButton)
-            .navigationBarHidden(false)
             .sheet(isPresented: $showSettings) {
                 SettingsView(movieDatabase: movieDatabase)
             }
@@ -69,15 +59,15 @@ struct ContentView: View {
                 PlatformView()
                     .environmentObject(movieDatabase)
             }
-        }
-        .onAppear {
-            Logger.log("ContentView appeared", level: .debug)
-            verifyDataIntegrity()
+            .onAppear {
+                Logger.log("ContentView appeared", level: .debug)
+                verifyDataIntegrity()
+            }
         }
     }
-
+    
     // MARK: - Subviews
-
+    
     private var topBar: some View {
         VStack(spacing: 8) {
             // Welcome message
@@ -107,7 +97,7 @@ struct ContentView: View {
                         .frame(width: 20, height: 20)
                         .foregroundColor(.blue)
                         .padding(8)
-                        .background(Color.blue.opacity(buttonOpacity))
+                        .background(Color.blue.opacity(0.1))
                         .clipShape(Circle())
                         .accessibilityLabel("Open Settings")
                 }
@@ -116,17 +106,7 @@ struct ContentView: View {
         }
         .padding(.top)
     }
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue.opacity(buttonOpacity))
-            .cornerRadius(cornerRadius)
-            .accessibilityAddTraits(.isHeader)
-    }
-
+    
     private var searchBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Search")
@@ -150,7 +130,7 @@ struct ContentView: View {
         }
         .padding(.top, 10)
     }
-
+    
     private var searchResultsView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Search Results")
@@ -170,8 +150,8 @@ struct ContentView: View {
                             NavigationLink(destination: TimelineCaptureView(movie: movie)) {
                                 Text(movie.title)
                                     .padding(8)
-                                    .background(Color.blue.opacity(buttonOpacity))
-                                    .cornerRadius(cornerRadius)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(10)
                                     .foregroundColor(.primary)
                                     .accessibilityLabel("Movie: \(movie.title)")
                             }
@@ -184,7 +164,7 @@ struct ContentView: View {
         }
         .transition(.opacity)
     }
-
+    
     private var recentMoviesView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Last 5 Added Movies")
@@ -214,7 +194,7 @@ struct ContentView: View {
         }
         .padding(.top, 20)
     }
-
+    
     private func sourceButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack {
@@ -227,11 +207,11 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.blue.opacity(buttonOpacity))
-            .cornerRadius(cornerRadius)
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(10)
         }
     }
-
+    
     private var settingsButton: some View {
         HStack {
             Button(action: { authManager.signOut() }) {
@@ -240,14 +220,14 @@ struct ContentView: View {
             }
         }
     }
-
+    
     // MARK: - Helper Methods
-
+    
     private func performSearch(query: String) {
         Logger.log("Performing search for: \(query)", level: .debug)
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
     }
-
+    
     private func verifyDataIntegrity() {
         Logger.log("Verifying data integrity", level: .debug)
         // Add data validation logic here

@@ -17,11 +17,8 @@ struct TimelineCaptureView: View {
     @State private var errorMessage = ""
     @State private var isLandscape = false
     
-    var movie: Movie {
-        if let index = movieDatabase.movies.firstIndex(where: { $0.id == movieId }) {
-            return movieDatabase.movies[index]
-        }
-        return originalMovie
+    private var movie: Movie {
+        movieDatabase.movies.first { $0.id == movieId } ?? originalMovie
     }
     
     private let movieId: UUID
@@ -30,10 +27,7 @@ struct TimelineCaptureView: View {
     init(movie: Movie) {
         self.movieId = movie.id
         self.originalMovie = movie
-        
-        // Enable screen rotation
-        UIDevice.current.setValue(UIDeviceOrientation.unknown.rawValue, forKey: "orientation")
-        UIViewController.attemptRotationToDeviceOrientation()
+        enableScreenRotation()
     }
     
     var body: some View {
@@ -48,8 +42,7 @@ struct TimelineCaptureView: View {
                             .padding()
                     }
                     
-                    if let posterImage = movie.posterImage,
-                       let url = URL(string: posterImage) {
+                    if let posterImage = movie.posterImage, let url = URL(string: posterImage) {
                         if !isLandscape {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Movie Link:")
@@ -65,55 +58,25 @@ struct TimelineCaptureView: View {
                         }
                         
                         if Self.isYouTubeURL(url) {
-                            ZStack {
-                                YouTubePlayerView(url: url, webViewStore: webViewStore, isLandscape: $isLandscape) { error in
-                                    errorMessage = error
-                                    showError = true
-                                }
-                                .frame(
-                                    width: isLandscape ? UIScreen.main.bounds.width : geometry.size.width,
-                                    height: isLandscape ? UIScreen.main.bounds.height : min(geometry.size.width * 9/16, 300)
-                                )
-                                .cornerRadius(isLandscape ? 0 : 10)
-                                .padding(.horizontal, isLandscape ? 0 : 16)
-                                .edgesIgnoringSafeArea(isLandscape ? .all : [])
+                            YouTubePlayerView(url: url, webViewStore: webViewStore, isLandscape: $isLandscape) { error in
+                                errorMessage = error
+                                showError = true
                             }
+                            .frame(
+                                width: isLandscape ? UIScreen.main.bounds.width : geometry.size.width,
+                                height: isLandscape ? UIScreen.main.bounds.height : min(geometry.size.width * 9/16, 300)
+                            )
+                            .cornerRadius(isLandscape ? 0 : 10)
+                            .padding(.horizontal, isLandscape ? 0 : 16)
+                            .edgesIgnoringSafeArea(isLandscape ? .all : [])
                         }
                     }
                     
                     if !isLandscape {
-                        Button(action: {
-                            Logger.log("Opening camera for movie: \(movie.title)", level: .debug)
-                            showingCamera = true
-                        }) {
-                            HStack {
-                                Image(systemName: "camera")
-                                Text("Capture Timeline")
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                        }
-                        .padding(.horizontal)
+                        captureButton
                         
                         if let timeline = recognizedTimeline {
-                            VStack(spacing: 8) {
-                                Text("Captured Time")
-                                    .font(.headline)
-                                    .padding(.top)
-                                
-                                Text(timeline)
-                                    .font(.body)
-                                
-                                if let delay = totalDelay {
-                                    Text("Processing Delay: \(String(format: "%.2f", delay)) seconds")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
-                            }
+                            capturedTimeView(timeline: timeline)
                         }
                         
                         if let error = timelineError {
@@ -124,29 +87,14 @@ struct TimelineCaptureView: View {
                         }
                         
                         if recognizedTimeline != nil {
-                            Button(action: saveTimeline) {
-                                Text("Save Timeline")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            .padding(.horizontal)
+                            saveTimelineButton
                         }
                     }
                 }
             }
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView(movie: movie) { numbers in
-                    Logger.log("Processing captured numbers: \(numbers)", level: .debug)
-                    capturedNumbers = numbers
-                    captureTimestamp = Date()
-                    
-                    DispatchQueue.main.async {
-                        processTimeline(numbers: numbers)
-                    }
+                    handleCapturedNumbers(numbers)
                 }
             }
             .alert(isPresented: $showError) {
@@ -158,15 +106,67 @@ struct TimelineCaptureView: View {
             }
         }
         .onAppear {
-            // Setup orientation change notification
-            NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
-                let orientation = UIDevice.current.orientation
-                isLandscape = orientation.isLandscape
-            }
+            setupOrientationChangeNotification()
         }
         .onDisappear {
             NotificationCenter.default.removeObserver(self)
         }
+    }
+    
+    private var captureButton: some View {
+        Button(action: {
+            Logger.log("Opening camera for movie: \(movie.title)", level: .debug)
+            showingCamera = true
+        }) {
+            HStack {
+                Image(systemName: "camera")
+                Text("Capture Timeline")
+            }
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.blue)
+            .cornerRadius(10)
+        }
+        .padding(.horizontal)
+    }
+    
+    private func capturedTimeView(timeline: String) -> some View {
+        VStack(spacing: 8) {
+            Text("Captured Time")
+                .font(.headline)
+                .padding(.top)
+            
+            Text(timeline)
+                .font(.body)
+            
+            if let delay = totalDelay {
+                Text("Processing Delay: \(String(format: "%.2f", delay)) seconds")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+    
+    private var saveTimelineButton: some View {
+        Button(action: saveTimeline) {
+            Text("Save Timeline")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+        }
+        .padding(.horizontal)
+    }
+    
+    private func handleCapturedNumbers(_ numbers: [Int]) {
+        Logger.log("Processing captured numbers: \(numbers)", level: .debug)
+        capturedNumbers = numbers
+        captureTimestamp = Date()
+        processTimeline(numbers: numbers)
     }
     
     private func processTimeline(numbers: [Int]) {
@@ -180,13 +180,55 @@ struct TimelineCaptureView: View {
             let capturedSeconds = (numbers[0] * 60) + numbers[1]
             let totalSeconds = Double(capturedSeconds) + (totalDelay ?? 0.0)
             
-            if let url = URL(string: movie.posterImage ?? ""),
-               Self.isYouTubeURL(url) {
+            if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url) {
                 webViewStore.seek(to: totalSeconds)
             }
         }
         
         timelineError = nil
+    }
+    
+    private func saveTimeline() {
+        Logger.log("Attempting to save timeline for movie: \(movie.title)", level: .debug)
+        
+        guard let numbers = capturedNumbers, validateCapturedTime(numbers) else {
+            Logger.log("Cannot save timeline: invalid captured time", level: .warning)
+            return
+        }
+        
+        let seconds = numbers[0] * 3600 + numbers[1] * 60
+        
+        let updatedMovie = Movie(
+            id: movie.id,
+            title: movie.title,
+            cinema: movie.cinema,
+            source: movie.source,
+            posterImage: movie.posterImage,
+            releaseDate: movie.releaseDate
+        )
+        
+        movieDatabase.updateMovie(updatedMovie)
+        Logger.log("Successfully saved timeline. New timestamp: \(formatTime(numbers: numbers))", level: .info)
+        
+        resetState()
+    }
+    
+    private func resetState() {
+        capturedNumbers = nil
+        recognizedTimeline = nil
+        timelineError = nil
+        showingCamera = false
+    }
+    
+    private func enableScreenRotation() {
+        UIDevice.current.setValue(UIDeviceOrientation.unknown.rawValue, forKey: "orientation")
+        UIViewController.attemptRotationToDeviceOrientation()
+    }
+    
+    private func setupOrientationChangeNotification() {
+        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
+            isLandscape = UIDevice.current.orientation.isLandscape
+        }
     }
     
     internal static func isYouTubeURL(_ url: URL) -> Bool {
@@ -236,36 +278,6 @@ struct TimelineCaptureView: View {
         
         Logger.log("Time validation successful", level: .debug)
         return true
-    }
-    
-    private func saveTimeline() {
-        Logger.log("Attempting to save timeline for movie: \(movie.title)", level: .debug)
-        
-        guard let numbers = capturedNumbers, validateCapturedTime(numbers) else {
-            Logger.log("Cannot save timeline: invalid captured time", level: .warning)
-            return
-        }
-        
-        let seconds = numbers[0] * 3600 + numbers[1] * 60
-        
-        // Create updated movie with the same properties
-        let updatedMovie = Movie(
-            id: movie.id,
-            title: movie.title,
-            cinema: movie.cinema,
-            source: movie.source,
-            posterImage: movie.posterImage,
-            releaseDate: movie.releaseDate
-        )
-        
-        movieDatabase.updateMovie(updatedMovie)
-        Logger.log("Successfully saved timeline. New timestamp: \(formatTime(numbers: numbers))", level: .info)
-        
-        // Reset state
-        capturedNumbers = nil
-        recognizedTimeline = nil
-        timelineError = nil
-        showingCamera = false
     }
 }
 
