@@ -162,11 +162,26 @@ struct TimelineCaptureView: View {
         .padding(.horizontal)
     }
     
-    private func handleCapturedNumbers(_ numbers: [Int]) {
-        Logger.log("Processing captured numbers: \(numbers)", level: .debug)
+    private func handleCapturedNumbers(_ numbers: [Int]?) {
+        guard let numbers = numbers else {
+            timelineError = "No numbers captured"
+            return
+        }
+        
         capturedNumbers = numbers
-        captureTimestamp = Date()
-        processTimeline(numbers: numbers)
+        
+        // Convert the numbers to a timeline string (e.g., "1:23")
+        if numbers.count >= 2 {
+            let minutes = numbers[0]
+            let seconds = numbers[1]
+            recognizedTimeline = "\(minutes):\(String(format: "%02d", seconds))"
+            
+            // Calculate total seconds and seek to that position
+            let totalSeconds = (minutes * 60) + seconds
+            webViewStore.seekToTime(totalSeconds)
+        } else {
+            timelineError = "Invalid timeline format"
+        }
     }
     
     private func processTimeline(numbers: [Int]) {
@@ -289,6 +304,15 @@ class WebViewStore: ObservableObject {
         player.seekTo(\(seconds), true);
         """
         webView?.evaluateJavaScript(javascript)
+    }
+    
+    func seekToTime(_ seconds: Int) {
+        let javascript = "player.seekTo(\(seconds), true);"
+        webView?.evaluateJavaScript(javascript, completionHandler: { (_, error) in
+            if let error = error {
+                Logger.log("Error seeking to time: \(error.localizedDescription)", level: .error)
+            }
+        })
     }
 }
 
