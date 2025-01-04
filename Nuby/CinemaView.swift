@@ -47,7 +47,7 @@ struct CinemaView: View {
                 
                 VStack(spacing: 0) {
                     // Search Bar
-                    SearchBar(text: $searchText, movieManager: MovieManager(movieDatabase: movieDatabase))
+                    SearchBar(searchText: $searchText, movieManager: MovieManager(movieDatabase: movieDatabase))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                     

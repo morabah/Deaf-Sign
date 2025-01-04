@@ -36,6 +36,7 @@ struct NubyApp: App {
     init() {
         // Configure appearance
         configureAppearance()
+        setupFirebase()
     }
     
     var body: some Scene {
@@ -113,15 +114,21 @@ struct NubyApp: App {
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
     }
+    
+    private func setupFirebase() {
+        do {
+            try FirebaseApp.configure()
+            Logger.log("Firebase configured successfully", level: .info)
+        } catch {
+            Logger.log("Failed to configure Firebase: \(error.localizedDescription)", level: .error)
+        }
+    }
 }
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Set the App Check debug provider factory
         let providerFactory = AppCheckDebugProviderFactory()
         AppCheck.setAppCheckProviderFactory(providerFactory)
-
-        // Configure Firebase
-        FirebaseApp.configure()
 
         return true
     }
@@ -142,4 +149,3 @@ func logDebugToken() {
    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
        return GIDSignIn.sharedInstance.handle(url)
    }
-

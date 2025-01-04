@@ -3,146 +3,250 @@ import os.log
 
 /// Main settings view for managing movie library and app preferences
 struct SettingsView: View {
+    // MARK: - Environment
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var movieDatabase: MovieDatabase
+    
+    // MARK: - State Objects
     @StateObject private var movieManager: MovieManager
     
-    @State private var searchText = ""
+    // MARK: - State
     @State private var editingMovie: Movie?
     @State private var isAddingMovie = false
     @State private var showDeleteConfirmation = false
     @State private var movieToDelete: Movie?
     @State private var showSuccessToast = false
     @State private var toastMessage = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
     
+    // MARK: - Initialization
     init(movieDatabase: MovieDatabase? = nil) {
         let db = movieDatabase ?? MovieDatabase()
-        self.movieDatabase = db
         _movieManager = StateObject(wrappedValue: MovieManager(movieDatabase: db))
     }
     
+    // MARK: - Computed Properties
     private var filteredMovies: [Movie] {
-        if searchText.isEmpty {
-            return movieDatabase.movies
-        }
-        return movieDatabase.movies.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText) ||
-            $0.source.rawValue.localizedCaseInsensitiveContains(searchText)
+        movieManager.filteredMovies
+    }
+    
+    // MARK: - Body
+    var body: some View {
+        NavigationStack {
+            mainContent
+                .navigationTitle("Movie Library")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { toolbarContent }
+                .sheet(item: $editingMovie, content: editMovieSheet)
+                .sheet(isPresented: $isAddingMovie, content: addMovieSheet)
+                .confirmationDialog(
+                    "Delete Movie",
+                    isPresented: $showDeleteConfirmation,
+                    presenting: movieToDelete,
+                    actions: deleteConfirmationActions,
+                    message: deleteConfirmationMessage
+                )
         }
     }
     
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background
-                Color(.systemGroupedBackground)
-                    .edgesIgnoringSafeArea(.all)
-                
-                // Main Content
-                VStack(spacing: 0) {
-                    // Search Bar
-                    SearchBar(text: $searchText, movieManager: movieManager)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                    
-                    // Movie List
-                    List {
-                        ForEach(filteredMovies) { movie in
-                            MovieCardView(movie: movie)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        movieToDelete = movie
-                                        showDeleteConfirmation = true
-                                    } label: {
-                                        Label("Delete", systemImage: "trash.fill")
-                                    }
-                                    
-                                    Button {
-                                        editingMovie = movie
-                                    } label: {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
-                                    .tint(.blue)
-                                }
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                                .listRowBackground(Color.clear)
-                        }
+    // MARK: - View Components
+    private var mainContent: some View {
+        ZStack {
+            // Background
+            Color(.systemGroupedBackground)
+                .edgesIgnoringSafeArea(.all)
+            
+            // Content Stack
+            VStack(spacing: 0) {
+                searchBar
+                movieList
+                addButton
+            }
+            
+            // Toasts
+            if showSuccessToast {
+                successToast
+            }
+            if showError {
+                errorToast
+            }
+        }
+    }
+    
+    private var searchBar: some View {
+        SearchBar(
+            searchText: $movieManager.searchText,
+            movieManager: movieManager
+        )
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+    
+    private var movieList: some View {
+        List {
+            ForEach(filteredMovies) { movie in
+                MovieCardView(movie: movie)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        deleteButton(for: movie)
+                        editButton(for: movie)
                     }
-                    .listStyle(.plain)
-                    .background(Color(.systemGroupedBackground))
-                    
-                    // Add Button
-                    Button(action: { isAddingMovie = true }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 20))
-                            Text("Add Movie")
-                                .font(.headline)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 2)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                }
-                
-                // Success Toast
-                if showSuccessToast {
-                    ToastView(message: toastMessage)
-                        .transition(.move(edge: .top))
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                withAnimation {
-                                    showSuccessToast = false
-                                }
-                            }
-                        }
-                }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
             }
-            .navigationTitle("Movie Library")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                    }
-                }
+        }
+        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    private var addButton: some View {
+        Button(action: { isAddingMovie = true }) {
+            HStack {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 20))
+                Text("Add Movie")
+                    .font(.headline)
             }
-            .sheet(item: $editingMovie) { movie in
-                MovieEditSheet(movie: movie, movieDatabase: movieDatabase, onSave: {
-                    toastMessage = "Movie updated successfully!"
-                    showSuccessToast = true
-                })
-            }
-            .sheet(isPresented: $isAddingMovie) {
-                MovieAddSheet(movieDatabase: movieDatabase, isPresented: $isAddingMovie, onSave: {
-                    toastMessage = "Movie added successfully!"
-                    showSuccessToast = true
-                })
-            }
-            .confirmationDialog("Delete Movie", isPresented: $showDeleteConfirmation, presenting: movieToDelete) { movie in
-                Button("Delete", role: .destructive) {
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+    
+    private var successToast: some View {
+        ToastView(message: toastMessage, style: .success)
+            .transition(.move(edge: .top))
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     withAnimation {
-                        movieDatabase.removeMovie(movie)
+                        showSuccessToast = false
+                    }
+                }
+            }
+    }
+    
+    private var errorToast: some View {
+        ToastView(message: errorMessage, style: .error)
+            .transition(.move(edge: .top))
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        showError = false
+                    }
+                }
+            }
+    }
+    
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+    
+    // MARK: - Action Buttons
+    private func deleteButton(for movie: Movie) -> some View {
+        Button(role: .destructive) {
+            movieToDelete = movie
+            showDeleteConfirmation = true
+        } label: {
+            Label("Delete", systemImage: "trash.fill")
+        }
+    }
+    
+    private func editButton(for movie: Movie) -> some View {
+        Button {
+            editingMovie = movie
+        } label: {
+            Label("Edit", systemImage: "pencil")
+        }
+        .tint(.blue)
+    }
+    
+    // MARK: - Sheet Content
+    private func editMovieSheet(movie: Movie) -> some View {
+        MovieEditSheet(
+            movie: movie,
+            onSave: { updatedMovie in
+                Task {
+                    do {
+                        try await movieManager.updateMovie(updatedMovie)
+                        withAnimation {
+                            toastMessage = "Movie updated successfully!"
+                            showSuccessToast = true
+                            editingMovie = nil
+                        }
+                    } catch {
+                        withAnimation {
+                            errorMessage = error.localizedDescription
+                            showError = true
+                        }
+                    }
+                }
+            },
+            onCancel: {
+                editingMovie = nil
+            }
+        )
+    }
+    
+    private func addMovieSheet() -> some View {
+        MovieAddSheet(
+            onSave: { newMovie in
+                Task {
+                    do {
+                        try await movieManager.addMovie(newMovie)
+                        withAnimation {
+                            toastMessage = "Movie added successfully!"
+                            showSuccessToast = true
+                            isAddingMovie = false
+                        }
+                    } catch {
+                        withAnimation {
+                            errorMessage = error.localizedDescription
+                            showError = true
+                        }
+                    }
+                }
+            },
+            onCancel: {
+                isAddingMovie = false
+            }
+        )
+    }
+    
+    // MARK: - Delete Confirmation
+    private func deleteConfirmationActions(for movie: Movie) -> some View {
+        Button("Delete", role: .destructive) {
+            Task {
+                do {
+                    try await movieManager.deleteMovie(movie)
+                    withAnimation {
                         toastMessage = "Movie deleted successfully!"
                         showSuccessToast = true
                     }
+                } catch {
+                    withAnimation {
+                        errorMessage = error.localizedDescription
+                        showError = true
+                    }
                 }
-            } message: { movie in
-                Text("Are you sure you want to delete '\(movie.title)'?")
             }
         }
+    }
+    
+    private func deleteConfirmationMessage(for movie: Movie) -> some View {
+        Text("Are you sure you want to delete '\(movie.title)'?")
     }
 }
 
 // MARK: - Supporting Views
-
-/// Card-style view for each movie
 struct MovieCardView: View {
     let movie: Movie
     
@@ -173,15 +277,27 @@ struct MovieCardView: View {
     }
 }
 
-/// Toast view for success messages
 struct ToastView: View {
     let message: String
+    let style: ToastStyle
+    
+    enum ToastStyle {
+        case success
+        case error
+        
+        var color: Color {
+            switch self {
+            case .success: return .green
+            case .error: return .red
+            }
+        }
+    }
     
     var body: some View {
         Text(message)
             .font(.subheadline)
             .padding()
-            .background(Color.green)
+            .background(style.color)
             .foregroundColor(.white)
             .cornerRadius(8)
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
@@ -190,134 +306,184 @@ struct ToastView: View {
 }
 
 // MARK: - Sheets
-
 struct MovieAddSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var movieDatabase: MovieDatabase
-    @Binding var isPresented: Bool
-    var onSave: () -> Void
+    let onSave: (Movie) -> Void
+    let onCancel: () -> Void
     
     @State private var title = ""
     @State private var link = ""
-    @State private var source: MovieSource = .cinema
+    @State private var source = MovieSource.cinema
+    @State private var cinemaName = ""
+    @State private var cinemaLocation = ""
+    @State private var releaseDate = Date()
+    @State private var isLoading = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Movie Details")) {
                     TextField("Title", text: $title)
-                        .textInputAutocapitalization(.words)
-                    
                     TextField("Link", text: $link)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                    
                     Picker("Source", selection: $source) {
                         Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
                     }
-                    .pickerStyle(.segmented)
+                    DatePicker("Release Date", selection: $releaseDate, displayedComponents: .date)
+                }
+                
+                if source == .cinema {
+                    Section(header: Text("Cinema Information")) {
+                        TextField("Cinema Name", text: $cinemaName)
+                        TextField("Location", text: $cinemaLocation)
+                    }
                 }
             }
             .navigationTitle("Add Movie")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { isPresented = false }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel", action: onCancel)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        addMovie()
-                        onSave()
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveMovie()
                     }
-                    .disabled(title.isEmpty || link.isEmpty)
+                    .disabled(!isValid)
+                }
+            }
+            .disabled(isLoading)
+            .overlay {
+                if isLoading {
+                    ProgressView()
                 }
             }
         }
     }
     
-    private func addMovie() {
-        let cinema = CinemaInformation(id: UUID(), name: "Default Cinema", location: "Unknown")
+    private var isValid: Bool {
+        !title.isEmpty && (!link.isEmpty || source == .cinema) &&
+        (source != .cinema || (!cinemaName.isEmpty && !cinemaLocation.isEmpty))
+    }
+    
+    private func saveMovie() {
+        let cinema = CinemaInformation(
+            id: UUID(),
+            name: cinemaName,
+            location: cinemaLocation
+        )
+        
         let movie = Movie(
             id: UUID(),
+            firestoreId: "",
             title: title,
             cinema: cinema,
             source: source,
-            posterImage: link,
-            releaseDate: nil
+            posterImage: link.isEmpty ? nil : link,
+            releaseDate: releaseDate,
+            userId: nil,
+            createdAt: Date(),
+            updatedAt: Date()
         )
         
-        movieDatabase.addMovie(movie)
-        isPresented = false
+        onSave(movie)
     }
 }
 
 struct MovieEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     let movie: Movie
-    @ObservedObject var movieDatabase: MovieDatabase
-    var onSave: () -> Void
+    let onSave: (Movie) -> Void
+    let onCancel: () -> Void
     
     @State private var title: String
     @State private var link: String
     @State private var source: MovieSource
+    @State private var cinemaName: String
+    @State private var cinemaLocation: String
+    @State private var releaseDate: Date
+    @State private var isLoading = false
     
-    init(movie: Movie, movieDatabase: MovieDatabase, onSave: @escaping () -> Void) {
+    init(movie: Movie, onSave: @escaping (Movie) -> Void, onCancel: @escaping () -> Void) {
         self.movie = movie
-        self.movieDatabase = movieDatabase
         self.onSave = onSave
+        self.onCancel = onCancel
+        
         _title = State(initialValue: movie.title)
         _link = State(initialValue: movie.posterImage ?? "")
         _source = State(initialValue: movie.source)
+        _cinemaName = State(initialValue: movie.cinema.name)
+        _cinemaLocation = State(initialValue: movie.cinema.location)
+        _releaseDate = State(initialValue: movie.releaseDate ?? Date())
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Movie Details")) {
                     TextField("Title", text: $title)
-                        .textInputAutocapitalization(.words)
-                    
                     TextField("Link", text: $link)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                    
                     Picker("Source", selection: $source) {
                         Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
                     }
-                    .pickerStyle(.segmented)
+                    DatePicker("Release Date", selection: $releaseDate, displayedComponents: .date)
+                }
+                
+                if source == .cinema {
+                    Section(header: Text("Cinema Information")) {
+                        TextField("Cinema Name", text: $cinemaName)
+                        TextField("Location", text: $cinemaLocation)
+                    }
                 }
             }
             .navigationTitle("Edit Movie")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel", action: onCancel)
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveChanges()
-                        onSave()
                     }
-                    .disabled(title.isEmpty || link.isEmpty)
+                    .disabled(!isValid)
+                }
+            }
+            .disabled(isLoading)
+            .overlay {
+                if isLoading {
+                    ProgressView()
                 }
             }
         }
     }
     
+    private var isValid: Bool {
+        !title.isEmpty && (!link.isEmpty || source == .cinema) &&
+        (source != .cinema || (!cinemaName.isEmpty && !cinemaLocation.isEmpty))
+    }
+    
     private func saveChanges() {
-        let cinema = CinemaInformation(id: movie.cinema.id, name: movie.cinema.name, location: movie.cinema.location)
+        let cinema = CinemaInformation(
+            id: movie.cinema.id,
+            name: cinemaName,
+            location: cinemaLocation
+        )
+        
         let updatedMovie = Movie(
             id: movie.id,
+            firestoreId: movie.firestoreId,
             title: title,
             cinema: cinema,
             source: source,
-            posterImage: link,
-            releaseDate: movie.releaseDate
+            posterImage: link.isEmpty ? nil : link,
+            releaseDate: releaseDate,
+            userId: movie.userId,
+            createdAt: movie.createdAt,
+            updatedAt: Date()
         )
         
-        movieDatabase.updateMovie(updatedMovie)
-        dismiss()
+        onSave(updatedMovie)
     }
 }

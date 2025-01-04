@@ -46,91 +46,74 @@ import os.log
 /// - Author: Nuby Development Team
 /// - Copyright: 2024 Nuby App
 
+@MainActor
+
 class MovieManager: ObservableObject {
     /// Published array of movies for reactive UI updates
-    @Published var movies: [Movie] = []
+    @Published private(set) var movies: [Movie] = []
     
     /// Filtered movies based on search query
-    @Published var filteredMovies: [Movie] = []
+    @Published private(set) var filteredMovies: [Movie] = []
     
     /// Current state of the search operation
-    @Published var searchState: MovieSearchState = .idle
+    @Published private(set) var searchState: MovieSearchState = .idle
     
     /// Potential error during movie operations
-    @Published var error: MovieOperationError?
+    @Published private(set) var error: MovieOperationError?
+    
+    /// Search text for debouncing
+    @Published var searchText = "" {
+        didSet {
+            Task { @MainActor in
+                await performSearch(query: searchText)
+            }
+        }
+    }
     
     /// Movie database for persistent storage
     private let movieDatabase: MovieDatabase
-    
-    /// Cancellables for storing subscriptions
     private var cancellables = Set<AnyCancellable>()
-    
-    /// Computed property for recent movies
-    var recentMovies: [Movie] {
-        let movies = movieDatabase.movies
-        Logger.log("Retrieving recent movies. Total count: \(movies.count)", level: .debug)
-        return movies
-    }
     
     init(movieDatabase: MovieDatabase) {
         Logger.log("Initializing MovieManager", level: .info)
         self.movieDatabase = movieDatabase
+        
+        // Set up movie database observation
+        movieDatabase.$movies
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] movies in
+                self?.movies = movies
+                self?.filteredMovies = movies // Reset filtered movies when database updates
+                Logger.log("Updated movies from database. Count: \(movies.count)", level: .debug)
+            }
+            .store(in: &cancellables)
+        
+        // Observe database errors
+        movieDatabase.$error
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] error in
+                self?.error = .databaseError(error)
+                Logger.log("Database error received: \(error.localizedDescription)", level: .error)
+            }
+            .store(in: &cancellables)
     }
     
-    func searchMovies(query: String) {
-        Logger.log("Starting movie search with query: \(query)", level: .debug)
-        searchState = .searching
-        
-        // Validate query
-        guard !query.isEmpty else {
-            Logger.log("Empty search query, showing all movies", level: .debug)
-            filteredMovies = movies
-            searchState = .idle
-            return
-        }
-        
-        // Perform search
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else {
-                Logger.log("Self reference lost during search", level: .error)
-                return
-            }
-            
-            let results = self.movieDatabase.searchMovies(query: query)
-            
-            DispatchQueue.main.async {
-                self.filteredMovies = results
-                self.searchState = .idle
-                Logger.log("Search completed. Found \(results.count) results", level: .debug)
-            }
-        }
-    }
-    
-    func addMovie(_ movie: Movie) {
+    func addMovie(_ movie: Movie) async throws {
         Logger.log("Adding movie: \(movie.title)", level: .info)
-        do {
-            try validateMovie(movie)
-            movieDatabase.addMovie(movie)
-        } catch {
-            Logger.handle(error, context: "Failed to add movie", level: .error)
-            self.error = .addFailed
-        }
+        try validateMovie(movie)
+        try await movieDatabase.addMovie(movie)
     }
     
-    func updateMovie(_ movie: Movie) {
+    func updateMovie(_ movie: Movie) async throws {
         Logger.log("Updating movie: \(movie.title)", level: .info)
-        do {
-            try validateMovie(movie)
-            movieDatabase.updateMovie(movie)
-        } catch {
-            Logger.handle(error, context: "Failed to update movie", level: .error)
-            self.error = .updateFailed
-        }
+        try validateMovie(movie)
+        try await movieDatabase.updateMovie(movie)
     }
     
-    func deleteMovie(_ movie: Movie) {
+    func deleteMovie(_ movie: Movie) async throws {
         Logger.log("Deleting movie: \(movie.title)", level: .info)
-        movieDatabase.removeMovie(movie)
+        try await movieDatabase.deleteMovie(movie)
     }
     
     private func validateMovie(_ movie: Movie) throws {
@@ -148,8 +131,33 @@ class MovieManager: ObservableObject {
                 throw MovieOperationError.invalidCinemaInfo
             }
         }
+    }
+    
+    private func performSearch(query: String) async {
+        Logger.log("Performing search with query: \(query)", level: .debug)
+        searchState = .searching
         
-        Logger.log("Movie validation successful", level: .debug)
+        // Validate query
+        guard !query.isEmpty else {
+            Logger.log("Empty search query, showing all movies", level: .debug)
+            filteredMovies = movies
+            searchState = .idle
+            return
+        }
+        
+        // Perform search on background thread
+        let results = await Task.detached(priority: .userInitiated) { [movies] in
+            movies.filter { movie in
+                movie.title.localizedCaseInsensitiveContains(query) ||
+                movie.cinema.name.localizedCaseInsensitiveContains(query) ||
+                movie.cinema.location.localizedCaseInsensitiveContains(query)
+            }
+        }.value
+        
+        // Update state on main actor
+        filteredMovies = results
+        searchState = .idle
+        Logger.log("Search completed. Found \(results.count) results", level: .debug)
     }
 }
 
@@ -160,15 +168,16 @@ enum MovieSearchState {
 }
 
 /// Custom errors that can occur during movie operations
-enum MovieOperationError: Error {
+enum MovieOperationError: Error, LocalizedError {
     case addFailed
     case updateFailed
     case deleteFailed
+    case databaseError(Error)
     case invalidTitle
     case invalidCinemaInfo
     case invalidURL
     
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .addFailed:
             return "Failed to add movie"
@@ -176,6 +185,8 @@ enum MovieOperationError: Error {
             return "Failed to update movie"
         case .deleteFailed:
             return "Failed to delete movie"
+        case .databaseError(let error):
+            return "Database error: \(error.localizedDescription)"
         case .invalidTitle:
             return "Movie title cannot be empty"
         case .invalidCinemaInfo:

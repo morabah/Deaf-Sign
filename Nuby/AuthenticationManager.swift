@@ -46,15 +46,16 @@ class AuthenticationManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
     @Published var authError: AuthError?
+    private var authStateListener: AuthStateDidChangeListenerHandle?
     
     static let shared = AuthenticationManager()
     
-    private init() {
+    init() {
         setupAuthStateListener()
     }
     
     private func setupAuthStateListener() {
-        Auth.auth().addStateDidChangeListener { [weak self] auth, user in
+        authStateListener = Auth.auth().addStateDidChangeListener { [weak self] auth, user in
             self?.currentUser = user
             self?.isAuthenticated = user != nil
             
@@ -64,6 +65,12 @@ class AuthenticationManager: ObservableObject {
                     "user_id": user.uid
                 ])
             }
+        }
+    }
+    
+    deinit {
+        if let listener = authStateListener {
+            Auth.auth().removeStateDidChangeListener(listener)
         }
     }
     

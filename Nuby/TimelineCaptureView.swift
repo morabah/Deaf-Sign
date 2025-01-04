@@ -213,17 +213,27 @@ struct TimelineCaptureView: View {
         
         let updatedMovie = Movie(
             id: movie.id,
+            firestoreId: movie.firestoreId,
             title: movie.title,
             cinema: movie.cinema,
             source: movie.source,
             posterImage: movie.posterImage,
-            releaseDate: movie.releaseDate
+            releaseDate: movie.releaseDate,
+            userId: movie.userId,
+            createdAt: movie.createdAt,
+            updatedAt: Date()
         )
         
-        movieDatabase.updateMovie(updatedMovie)
-        Logger.log("Successfully saved timeline. New timestamp: \(formatTime(numbers: numbers))", level: .info)
-        
-        resetState()
+        Task {
+            do {
+                try await movieDatabase.updateMovie(updatedMovie)
+                Logger.log("Successfully saved timeline. New timestamp: \(formatTime(numbers: numbers))", level: .info)
+                resetState()
+            } catch {
+                Logger.log("Failed to save timeline: \(error.localizedDescription)", level: .error)
+                timelineError = error.localizedDescription
+            }
+        }
     }
     
     private func resetState() {
