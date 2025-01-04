@@ -1,5 +1,7 @@
 import SwiftUI
 import os.log
+import FirebaseCore
+import FirebaseAuth
 
 struct ContentView: View {
     @EnvironmentObject var movieDatabase: MovieDatabase
@@ -11,6 +13,8 @@ struct ContentView: View {
     @State private var showPlatformView = false
     @State private var searchDebounceTimer: Timer?
     @FocusState private var isInputActive: Bool
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
     
     var body: some View {
         NavigationView {
@@ -71,7 +75,7 @@ struct ContentView: View {
     private var topBar: some View {
         VStack(spacing: 8) {
             // Welcome message
-            if let userName = authManager.currentUser?.profile?.name {
+            if let userName = authManager.currentUser?.displayName ?? authManager.currentUser?.email {
                 Text("Hi, \(userName)!")
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -214,10 +218,22 @@ struct ContentView: View {
     
     private var settingsButton: some View {
         HStack {
-            Button(action: { authManager.signOut() }) {
+            Button(action: {
+                do {
+                    try authManager.signOut()
+                } catch {
+                    showingAlert = true
+                    alertMessage = error.localizedDescription
+                }
+            }) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                     .imageScale(.large)
             }
+        }
+        .alert("Error", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(alertMessage)
         }
     }
     

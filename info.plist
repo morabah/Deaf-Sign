@@ -2,23 +2,28 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.530688000500-9mtdt1orgd7pt5hotggc689o2vrio4ht</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239.apps.googleusercontent.com</string>
 	<key>LastAccessedDate</key>
 	<date>2025-01-02T01:43:32Z</date>
 	<key>WorkspacePath</key>
 	<string>/Volumes/Rabah_SSD/deaf sign 3/Deaf-Sign/Nuby.xcodeproj</string>
-
-	<key>GIDClientID</key>
-	<string>320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239.apps.googleusercontent.com</string>
-
-<key>CFBundleURLTypes</key>
-<array>
-    <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>com.googleusercontent.apps.320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239</string>
-        </array>
-    </dict>
-</array>
-	
 </dict>
 </plist>

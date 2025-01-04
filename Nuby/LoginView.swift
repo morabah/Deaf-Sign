@@ -80,21 +80,19 @@ struct LoginView: View {
                     .padding(.horizontal, 30)
                     
                     // Google Sign In Button
-                    Button(action: { authManager.signInWithGoogle() }) {
+                    Button(action: {
+                        authManager.signInWithGoogle()
+                    }) {
                         HStack {
-                            Image("google_logo") // Add this image to your assets
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 20, height: 20)
-                            Text("Continue with Google")
-                                .font(.headline)
-                                .foregroundColor(.black)
+                            Image(systemName: "g.circle.fill")
+                                .foregroundColor(.red)
+                            Text("Sign in with Google")
                         }
-                        .frame(maxWidth: .infinity)
                         .padding()
+                        .frame(maxWidth: .infinity)
                         .background(Color.white)
                         .cornerRadius(10)
-                        .shadow(color: .gray.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(radius: 2)
                     }
                     .padding(.horizontal, 30)
                     
@@ -129,6 +127,7 @@ struct LoginView: View {
             }
             .sheet(isPresented: $isSigningUp) {
                 SignUpView()
+                    .environmentObject(authManager)
             }
             .onChange(of: authManager.isAuthenticated, initial: true) { oldValue, newValue in
                 handleAuthenticationChange(newValue)
@@ -145,16 +144,15 @@ struct LoginView: View {
     private func handleLogin() {
         Logger.log("Attempting login for email: \(email)", level: .debug)
         
-        guard !email.isEmpty && !password.isEmpty else {
-            alertMessage = "Please enter both email and password"
-            showingAlert = true
-            return
+        Task {
+            do {
+                try await authManager.signInWithEmail(email: email, password: password)
+                presentationMode.wrappedValue.dismiss()
+            } catch {
+                showingAlert = true
+                alertMessage = error.localizedDescription
+            }
         }
-        
-        // Add your email/password authentication logic here
-        // For now, just show an error
-        alertMessage = "Email/password login not implemented yet. Please use Google Sign-In."
-        showingAlert = true
     }
     
     private func validateEmail(_ email: String) {
@@ -181,6 +179,8 @@ struct LoginView: View {
 
 struct SignUpView: View {
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var authManager: AuthenticationManager
+    
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -258,9 +258,14 @@ struct SignUpView: View {
             return
         }
         
-        // Add your sign up logic here
-        // For now, just show an error
-        alertMessage = "Sign up not implemented yet. Please use Google Sign-In."
-        showingAlert = true
+        Task {
+            do {
+                try await authManager.signUpWithEmail(email: email, password: password)
+                presentationMode.wrappedValue.dismiss()
+            } catch {
+                showingAlert = true
+                alertMessage = error.localizedDescription
+            }
+        }
     }
 }
