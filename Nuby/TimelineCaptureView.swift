@@ -42,7 +42,7 @@ struct TimelineCaptureView: View {
                             .padding()
                     }
                     
-                    if let posterImage = movie.posterImage, let url = URL(string: posterImage) {
+                    if let posterImage = movie.posterImage, let url = TimelineCaptureView.validateAndFormatURL(posterImage) {
                         if !isLandscape {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Movie Link:")
@@ -195,9 +195,15 @@ struct TimelineCaptureView: View {
             let hours = numbers[0]
             let minutes = numbers[1]
             
-            if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url) {
-                webViewStore.seek(to: Double(hours * 3600 + minutes * 60))
+            guard let posterImage = movie.posterImage,
+                  let url = URL(string: posterImage),
+                  Self.isYouTubeURL(url),
+                  Self.getYouTubeVideoID(from: url) != nil else {
+                Logger.log("Invalid or non-YouTube URL in movie poster image", level: .error)
+                return
             }
+            
+            webViewStore.seek(to: Double(hours * 3600 + minutes * 60))
         }
         
         timelineError = nil
@@ -244,30 +250,39 @@ struct TimelineCaptureView: View {
     }
     
     private func enableScreenRotation() {
-        UIDevice.current.setValue(UIDeviceOrientation.unknown.rawValue, forKey: "orientation")
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            let geometryPreferences = UIWindowScene.GeometryPreferences.iOS()
+            geometryPreferences.interfaceOrientations = .all
+            windowScene.requestGeometryUpdate(geometryPreferences)
             windowScene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         }
     }
     
     private func setupOrientationChangeNotification() {
         NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
-            isLandscape = UIDevice.current.orientation.isLandscape
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                self.isLandscape = windowScene.interfaceOrientation.isLandscape
+            }
         }
     }
     
     internal static func isYouTubeURL(_ url: URL) -> Bool {
-        let host = url.host ?? ""
+        guard let host = url.host?.lowercased() else { return false }
         return host.contains("youtube.com") || host.contains("youtu.be")
     }
     
     internal static func getYouTubeVideoID(from url: URL) -> String? {
-        if url.host?.contains("youtu.be") == true {
+        guard let host = url.host?.lowercased() else { return nil }
+        
+        if host.contains("youtu.be") {
             return url.lastPathComponent
-        } else if url.host?.contains("youtube.com") == true {
-            if let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems {
-                return queryItems.first(where: { $0.name == "v" })?.value
+        } else if host.contains("youtube.com") {
+            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                  let videoID = components.queryItems?.first(where: { $0.name == "v" })?.value,
+                  !videoID.isEmpty else {
+                return nil
             }
+            return videoID
         }
         return nil
     }
@@ -276,6 +291,27 @@ struct TimelineCaptureView: View {
         guard let videoID = getYouTubeVideoID(from: url) else { return nil }
         let embedURLString = "https://www.youtube.com/embed/\(videoID)?enablejsapi=1&playsinline=1&controls=1&rel=0&modestbranding=1&origin=\(Bundle.main.bundleIdentifier ?? "app")"
         return URL(string: embedURLString)
+    }
+    
+    internal static func validateAndFormatURL(_ urlString: String) -> URL? {
+        var formattedString = urlString
+        
+        // If URL doesn't start with a protocol, add https://
+        if !formattedString.lowercased().hasPrefix("http") {
+            formattedString = "https://" + formattedString
+        }
+        
+        // If URL starts with http://, replace with https://
+        if formattedString.lowercased().hasPrefix("http://") {
+            formattedString = "https://" + formattedString.dropFirst("http://".count)
+        }
+        
+        // If URL doesn't have www. after https://, add it
+        if formattedString.lowercased().hasPrefix("https://") && !formattedString.lowercased().hasPrefix("https://www.") {
+            formattedString = formattedString.replacingOccurrences(of: "https://", with: "https://www.")
+        }
+        
+        return URL(string: formattedString)
     }
     
     private func formatTime(numbers: [Int]) -> String {
@@ -317,12 +353,21 @@ class WebViewStore: ObservableObject {
     }
     
     func seekToTime(_ seconds: Int) {
-        let javascript = "player.seekTo(\(seconds), true);"
-        webView?.evaluateJavaScript(javascript, completionHandler: { (_, error) in
+        let javascript = """
+            if (typeof player !== 'undefined' && player) {
+                player.seekTo(\(seconds));
+                true;
+            } else {
+                false;
+            }
+        """
+        webView?.evaluateJavaScript(javascript) { (result, error) in
             if let error = error {
                 Logger.log("Error seeking to time: \(error.localizedDescription)", level: .error)
+            } else if let success = result as? Bool, !success {
+                Logger.log("Player not ready for seeking", level: .error)
             }
-        })
+        }
     }
 }
 
@@ -354,6 +399,12 @@ struct YouTubePlayerView: UIViewRepresentable {
         webView.uiDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
         webView.allowsBackForwardNavigationGestures = false
+        
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        
+        webView.inputAssistantItem.leadingBarButtonGroups = []
+        webView.inputAssistantItem.trailingBarButtonGroups = []
+        
         webViewStore.webView = webView
         
         if let videoID = TimelineCaptureView.getYouTubeVideoID(from: url) {
@@ -423,6 +474,9 @@ struct YouTubePlayerView: UIViewRepresentable {
                         window.webkit.messageHandlers.videoPlayer.postMessage("ready");
                         event.target.playVideo();
                         
+                        // Make player globally accessible
+                        window.player = event.target;
+                        
                         // Handle orientation changes
                         screen.orientation.addEventListener('change', function() {
                             updatePlayerSize();
@@ -475,11 +529,15 @@ struct YouTubePlayerView: UIViewRepresentable {
     func updateUIView(_ webView: WKWebView, context: Context) {}
     
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
-        NotificationCenter.default.removeObserver(coordinator)
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "videoPlayer")
+        webView.stopLoading()
+        webView.uiDelegate = nil
+        webView.navigationDelegate = nil
     }
     
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
-        let parent: YouTubePlayerView
+        var parent: YouTubePlayerView
+        private var isPlayerReady = false
         
         init(_ parent: YouTubePlayerView) {
             self.parent = parent
@@ -488,11 +546,14 @@ struct YouTubePlayerView: UIViewRepresentable {
         
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let messageString = message.body as? String else { return }
+            Logger.log("YouTube player message: \(messageString)", level: .debug)
             
-            if messageString.starts(with: "error:") {
-                let error = String(messageString.dropFirst(6))
-                Logger.log("YouTube player error: \(error)", level: .error)
-                parent.onError(error)
+            if messageString == "ready" {
+                isPlayerReady = true
+            } else if messageString.hasPrefix("state:") {
+                handlePlayerState(messageString)
+            } else if messageString.hasPrefix("error:") {
+                handlePlayerError(messageString)
             } else if messageString == "landscape" {
                 DispatchQueue.main.async {
                     self.parent.isLandscape = true
@@ -501,8 +562,31 @@ struct YouTubePlayerView: UIViewRepresentable {
                 DispatchQueue.main.async {
                     self.parent.isLandscape = false
                 }
-            } else {
-                Logger.log("YouTube player message: \(messageString)", level: .debug)
+            }
+        }
+        
+        private func handlePlayerState(_ message: String) {
+            let state = message.dropFirst("state:".count)
+            switch state {
+            case "0": // ended
+                Logger.log("Video playback ended", level: .debug)
+            case "1": // playing
+                Logger.log("Video is playing", level: .debug)
+            case "2": // paused
+                Logger.log("Video is paused", level: .debug)
+            case "3": // buffering
+                Logger.log("Video is buffering", level: .debug)
+            case "5": // video cued
+                Logger.log("Video cued", level: .debug)
+            default:
+                Logger.log("Unknown player state: \(state)", level: .debug)
+            }
+        }
+        
+        private func handlePlayerError(_ message: String) {
+            let error = message.dropFirst("error:".count)
+            DispatchQueue.main.async {
+                self.parent.onError(String(error))
             }
         }
         

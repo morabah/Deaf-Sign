@@ -67,6 +67,8 @@ struct ContentView: View {
                 Logger.log("ContentView appeared", level: .debug)
                 verifyDataIntegrity()
             }
+            
+            
         }
     }
     
