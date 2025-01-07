@@ -18,8 +18,10 @@ struct TimelineCaptureView: View {
     @State private var isLandscape = false
     @State private var currentVideoTime: TimeInterval = 0
     @State private var isUpdatingTime = false
+    @State private var showTimeControls = false
+    @State private var orientation = UIDevice.current.orientation
     private let updateInterval: TimeInterval = 0.1 // 100ms update interval
-    private let initFraction: Double = 0.01 // 1 init = 0.01 seconds (100 inits = 1 second)
+    private let minSeekStep: Double = 0.1 // Minimum seek step (100ms)
     
     private var movie: Movie {
         movieDatabase.movies.first { $0.id == movieId } ?? originalMovie
@@ -36,97 +38,157 @@ struct TimelineCaptureView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Movie Title
-                        Text(movie.title)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal)
-                        
-                        // URL Display and Player
-                        if let url = URL(string: movie.posterImage ?? "") {
-                            VStack(alignment: .leading) {
-                                Text("Video URL:")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                
-                                Text(url.absoluteString)
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                            }
-                            .padding(.horizontal)
-                            
-                            if Self.isYouTubeURL(url) {
-                                YouTubePlayerView(url: url, webViewStore: webViewStore, isLandscape: $isLandscape, currentTime: $currentVideoTime) { error in
-                                    DispatchQueue.main.async {
-                                        self.errorMessage = error
-                                        self.showError = true
-                                    }
-                                }
-                                .frame(
-                                    width: isLandscape ? UIScreen.main.bounds.width : geometry.size.width,
-                                    height: isLandscape ? UIScreen.main.bounds.height : min(geometry.size.width * 9/16, 300)
-                                )
-                            }
-                        }
-                        
-                        // Timeline Section
-                        if let timeline = recognizedTimeline {
-                            capturedTimeView(timeline: timeline)
-                        }
-                        
-                        if let error = timelineError {
-                            Text(error)
-                                .foregroundColor(.red)
-                                .font(.callout)
-                                .padding()
-                        }
-                        
-                        if recognizedTimeline != nil {
-                            saveTimelineButton
-                        }
-                        
-                        // Time Control View
-                        timeControlView
-                            .padding()
-                        
-                        // Capture Button
-                        captureButton
-                            .padding()
-                    }
-                    .padding(.vertical)
+            ZStack {
+                if orientation.isLandscape {
+                    // Landscape Mode
+                    landscapeLayout
+                } else {
+                    // Portrait Mode
+                    portraitLayout
                 }
-            }
-            .navigationBarTitle("", displayMode: .inline)
-            .navigationBarItems(trailing: closeButton)
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(errorMessage)
-            }
-            .sheet(isPresented: $showingCamera) {
-                CameraView(movie: movie) { numbers in
-                    handleCapturedNumbers(numbers)
-                }
-            }
-            .onChange(of: capturedNumbers) { oldValue, newValue in
-                if let numbers = newValue {
-                    handleCapturedNumbers(numbers)
-                }
-            }
-            .onAppear {
-                setupOrientationChangeNotification()
-                setupYouTubeTimeUpdates()
-            }
-            .onDisappear {
-                NotificationCenter.default.removeObserver(self)
-                isUpdatingTime = false
             }
         }
+        .navigationBarTitle("", displayMode: .inline)
+        .navigationBarItems(trailing: closeButton)
+        .alert(isPresented: $showError) {
+            Alert(
+                title: Text("Error"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .sheet(isPresented: $showingCamera) {
+            CameraView(movie: movie) { numbers in
+                handleCapturedNumbers(numbers)
+            }
+        }
+        .onChange(of: capturedNumbers) { oldValue, newValue in
+            if let numbers = newValue {
+                handleCapturedNumbers(numbers)
+            }
+        }
+        .onAppear {
+            setupOrientationChangeNotification()
+            setupYouTubeTimeUpdates()
+        }
+        .onDisappear {
+            NotificationCenter.default.removeObserver(self)
+            isUpdatingTime = false
+        }
+        .onRotate { newOrientation in
+            orientation = newOrientation
+        }
+    }
+    
+    private var landscapeLayout: some View {
+        ZStack {
+            // YouTube Player
+            if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url),
+               let videoID = Self.getYouTubeVideoID(from: url) {
+                YouTubePlayerView(
+                    videoID: videoID,
+                    webViewStore: webViewStore,
+                    currentVideoTime: $currentVideoTime,
+                    isPlayerReady: .constant(false),
+                    onError: { error in
+                        errorMessage = error
+                        showError = true
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .edgesIgnoringSafeArea(.all)
+                .onTapGesture {
+                    withAnimation {
+                        showTimeControls = false
+                    }
+                }
+            }
+            
+            // Overlay Button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation {
+                            showTimeControls.toggle()
+                        }
+                    }) {
+                        Image(systemName: "clock.circle.fill")
+                            .resizable()
+                            .frame(width: 44, height: 44)
+                            .foregroundColor(.white)
+                            .background(Circle().fill(Color.black.opacity(0.5)))
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+            
+            // Time Control Overlay
+            if showTimeControls {
+                VStack {
+                    timeControlView
+                        .transition(.move(edge: .top))
+                    Spacer()
+                }
+            }
+        }
+        .navigationBarHidden(true)
+    }
+    
+    private var portraitLayout: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Movie Title
+                Text(movie.title)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.horizontal)
+                
+                // Video Player
+                if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url),
+                   let videoID = Self.getYouTubeVideoID(from: url) {
+                    YouTubePlayerView(
+                        videoID: videoID,
+                        webViewStore: webViewStore,
+                        currentVideoTime: $currentVideoTime,
+                        isPlayerReady: .constant(false),
+                        onError: { error in
+                            errorMessage = error
+                            showError = true
+                        }
+                    )
+                    .frame(height: UIScreen.main.bounds.width * 9/16)
+                    .padding(.horizontal)
+                }
+                
+                // Timeline Section
+                if let timeline = recognizedTimeline {
+                    capturedTimeView(timeline: timeline)
+                }
+                
+                if let error = timelineError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.callout)
+                        .padding()
+                }
+                
+                if recognizedTimeline != nil {
+                    saveTimelineButton
+                }
+                
+                // Time Control View
+                timeControlView
+                    .padding()
+                
+                // Capture Button
+                captureButton
+                    .padding()
+            }
+            .padding(.vertical)
+        }
+        .navigationBarHidden(false)
     }
     
     // MARK: - UI Components
@@ -190,44 +252,167 @@ struct TimelineCaptureView: View {
     }
     
     private var timeControlView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 16) {
             // Current YouTube Time Display
-            HStack {
-                Image(systemName: "clock")
-                    .foregroundColor(.white)
+            VStack(spacing: 4) {
                 Text(formatVideoTime(currentVideoTime))
-                    .font(.system(.title3, design: .monospaced))
+                    .font(.system(size: 32, weight: .medium, design: .monospaced))
                     .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(Color.black.opacity(0.7))
-            .cornerRadius(8)
             
             // Time Control Buttons
-            HStack(spacing: 20) {
-                Button(action: { adjustTime(by: -initFraction) }) {
-                    Image(systemName: "gobackward")
-                        .imageScale(.large)
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Color.blue)
-                        .clipShape(Circle())
+            HStack(spacing: 24) {
+                // Decrease Time Button
+                TimeControlButton(
+                    action: { seekRelativeTime(-1.0) },
+                    symbol: "minus.circle.fill",
+                    size: 44,
+                    color: .white
+                )
+                
+                // Fine Control Buttons
+                VStack(spacing: 8) {
+                    // Fine Increase Button (+0.1s)
+                    TimeControlButton(
+                        action: { seekRelativeTime(minSeekStep) },
+                        symbol: "plus.circle",
+                        size: 32,
+                        color: .white,
+                        label: "+0.1s"
+                    )
+                    
+                    // Fine Decrease Button (-0.1s)
+                    TimeControlButton(
+                        action: { seekRelativeTime(-minSeekStep) },
+                        symbol: "minus.circle",
+                        size: 32,
+                        color: .white,
+                        label: "-0.1s"
+                    )
                 }
                 
-                Button(action: { adjustTime(by: initFraction) }) {
-                    Image(systemName: "goforward")
-                        .imageScale(.large)
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Color.blue)
-                        .clipShape(Circle())
+                // Increase Time Button
+                TimeControlButton(
+                    action: { seekRelativeTime(1.0) },
+                    symbol: "plus.circle.fill",
+                    size: 44,
+                    color: .white
+                )
+            }
+            .padding(.horizontal)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.black.opacity(0.7))
+        )
+        .padding(.horizontal)
+    }
+    
+    private struct TimeControlButton: View {
+        let action: () -> Void
+        let symbol: String
+        let size: CGFloat
+        let color: Color
+        var label: String? = nil
+        
+        @State private var isLongPressing = false
+        @State private var timer: Timer? = nil
+        
+        var body: some View {
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: symbol)
+                        .resizable()
+                        .frame(width: size, height: size)
+                        .foregroundColor(color)
+                    
+                    if let label = label {
+                        Text(label)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .buttonStyle(TimeControlButtonStyle())
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        isLongPressing = true
+                        startRepeatingAction()
+                    }
+            )
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onEnded { _ in
+                        isLongPressing = false
+                        stopRepeatingAction()
+                    }
+            )
+            .gesture(
+                TapGesture()
+                    .onEnded {
+                        if !isLongPressing {
+                            action()
+                        }
+                    }
+            )
+        }
+        
+        private func startRepeatingAction() {
+            // Initial delay before rapid repeating
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                guard isLongPressing else { return }
+                
+                // Start the timer for continuous updates
+                timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                    guard isLongPressing else {
+                        stopRepeatingAction()
+                        return
+                    }
+                    action()
                 }
             }
         }
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.5))
-        .cornerRadius(12)
+        
+        private func stopRepeatingAction() {
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+    
+    private struct TimeControlButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .opacity(configuration.isPressed ? 0.7 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+                .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+        }
+    }
+    
+    private func seekRelativeTime(_ offset: TimeInterval) {
+        let newTime = max(0, currentVideoTime + offset)
+        // Round to nearest 0.1 second for YouTube compatibility
+        let roundedTime = round(newTime * 10) / 10
+        seekToVideoTime(roundedTime)
+    }
+    
+    private func seekToVideoTime(_ targetTime: TimeInterval) {
+        guard let webView = webViewStore.webView else { return }
+        
+        let javascript = "window.seekVideo(\(targetTime));"
+        
+        DispatchQueue.main.async {
+            webView.evaluateJavaScript(javascript) { result, error in
+                if let error = error {
+                    Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
+                    self.errorMessage = "Failed to seek video: \(error.localizedDescription)"
+                    self.showError = true
+                }
+            }
+        }
     }
     
     // MARK: - Timeline Handling
@@ -288,24 +473,10 @@ struct TimelineCaptureView: View {
         Logger.log("Original time: \(originalSeconds)s, Delay: \(adjustedDelay)s, Adjusted time: \(adjustedSeconds)s", level: .debug)
         
         // Seek to adjusted time
-        seekToVideoTime(adjustedSeconds)
+        seekToVideoTime(TimeInterval(adjustedSeconds))
     }
     
-    private func seekToVideoTime(_ seconds: Int) {
-        guard let webView = webViewStore.webView else { return }
-        
-        let javascript = "window.seekToTime(\(seconds));"
-        
-        DispatchQueue.main.async {
-            webView.evaluateJavaScript(javascript) { result, error in
-                if let error = error {
-                    Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                    self.errorMessage = "Failed to seek video: \(error.localizedDescription)"
-                    self.showError = true
-                }
-            }
-        }
-    }
+    // MARK: - Other
     
     private func saveTimeline() {
         guard let timeline = recognizedTimeline else {
@@ -389,15 +560,13 @@ struct TimelineCaptureView: View {
         let hours = Int(time) / 3600
         let minutes = Int(time) / 60 % 60
         let seconds = Int(time) % 60
-        let inits = Int((time.truncatingRemainder(dividingBy: 1)) * 100)
+        let tenths = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
         
-        return String(format: "%02d:%02d:%02d:%02d", hours, minutes, seconds, inits)
-    }
-    
-    private func adjustTime(by amount: Double) {
-        let newTime = max(0, currentVideoTime + amount)
-        currentVideoTime = newTime
-        seekToVideoTime(Int(newTime), inits: Int((newTime.truncatingRemainder(dividingBy: 1)) * 100))
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d.%01d", hours, minutes, seconds, tenths)
+        } else {
+            return String(format: "%02d:%02d.%01d", minutes, seconds, tenths)
+        }
     }
     
     private func setupYouTubeTimeUpdates() {
@@ -416,127 +585,74 @@ struct TimelineCaptureView: View {
         
         webView.evaluateJavaScript(javascript)
     }
-    
-    private func seekToVideoTime(_ seconds: Int, inits: Int = 0) {
-        guard let webView = webViewStore.webView else { return }
-        
-        let totalSeconds = Double(seconds) + Double(inits) / 100.0
-        let javascript = """
-            if (player && player.seekTo) {
-                player.seekTo(\(totalSeconds), true);
-                player.playVideo();
-            }
-        """
-        
-        webView.evaluateJavaScript(javascript) { result, error in
-            if let error = error {
-                Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                self.errorMessage = "Failed to seek video: \(error.localizedDescription)"
-                self.showError = true
-            } else {
-                Logger.log("Successfully seeked to \(totalSeconds) seconds", level: .debug)
-            }
-        }
-    }
 }
 
 struct YouTubePlayerView: UIViewRepresentable {
-    let url: URL
+    let videoID: String
     @ObservedObject var webViewStore: WebViewStore
-    @Binding var isLandscape: Bool
-    @Binding var currentTime: TimeInterval
+    @Binding var currentVideoTime: TimeInterval
+    @Binding var isPlayerReady: Bool
     let onError: (String) -> Void
     
-    @State private var isPlayerReady = false
+    @State private var isPlayerReadyState = false
     @State private var pendingSeekTime: TimeInterval?
     
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: YouTubePlayerView
-        private var currentOrientation: Bool?
         
         init(_ parent: YouTubePlayerView) {
             self.parent = parent
-            super.init()
         }
         
-        func shouldUpdateOrientation(_ isLandscape: Bool) -> Bool {
-            guard currentOrientation != isLandscape else { return false }
-            currentOrientation = isLandscape
-            return true
-        }
-        
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard let messageString = message.body as? String,
-                  let data = messageString.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                  let event = json["event"] as? String else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                switch event {
-                case "ready":
-                    Logger.log("YouTube player ready", level: .debug)
-                    self.parent.isPlayerReady = true
-                    if let pendingTime = self.parent.pendingSeekTime {
-                        self.parent.seekToTime(pendingTime)
-                        self.parent.pendingSeekTime = nil
-                    }
-                    
-                case "timeUpdate":
-                    if let time = json["time"] as? TimeInterval {
-                        self.parent.currentTime = time
-                    }
-                    
-                case "error":
-                    if let error = json["error"] as? String {
-                        Logger.log("YouTube player error: \(error)", level: .error)
-                        self.parent.onError(error)
-                    }
-                    
-                case "stateChange":
-                    if let state = json["state"] as? Int {
-                        switch state {
-                        case -1: // unstarted
-                            Logger.log("Player unstarted", level: .debug)
-                            self.parent.isPlayerReady = false
-                        case 0: // ended
-                            Logger.log("Player ended", level: .debug)
-                        case 1: // playing
-                            Logger.log("Player playing", level: .debug)
-                            self.parent.isPlayerReady = true
-                        case 2: // paused
-                            Logger.log("Player paused", level: .debug)
-                        case 3: // buffering
-                            Logger.log("Player buffering", level: .debug)
-                        case 5: // video cued
-                            Logger.log("Player video cued", level: .debug)
-                            self.parent.isPlayerReady = true
-                        default:
-                            Logger.log("Unknown player state: \(state)", level: .debug)
-                        }
-                    }
-                    
-                case "seeked":
-                    if let time = json["time"] as? TimeInterval {
-                        Logger.log("Seeked to time: \(time)", level: .debug)
-                        self.parent.currentTime = time
-                    }
-                    
-                default:
-                    Logger.log("Unknown event: \(event)", level: .debug)
-                }
-            }
-        }
-        
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            Logger.log("WebView failed to load: \(error.localizedDescription)", level: .error)
-            parent.onError(error.localizedDescription)
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Logger.log("WebView finished loading", level: .debug)
         }
         
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            Logger.log("WebView navigation failed: \(error.localizedDescription)", level: .error)
-            parent.onError(error.localizedDescription)
+            Logger.log("WebView failed to load: \(error.localizedDescription)", level: .error)
+            parent.onError("Failed to load video: \(error.localizedDescription)")
+        }
+        
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard let body = message.body as? String,
+                  let data = body.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                  let event = json["event"] as? String else {
+                Logger.log("Invalid message received from WebView", level: .error)
+                return
+            }
+            
+            switch event {
+            case "ready":
+                Logger.log("Player is ready", level: .debug)
+                parent.isPlayerReady = true
+                parent.isPlayerReadyState = true
+                
+            case "timeUpdate":
+                if let time = json["time"] as? TimeInterval {
+                    parent.currentVideoTime = time
+                }
+                
+            case "error":
+                if let error = json["error"] as? String {
+                    Logger.log("Player error: \(error)", level: .error)
+                    parent.onError(error)
+                }
+                
+            case "stateChange":
+                if let state = json["state"] as? Int {
+                    Logger.log("Player state changed: \(state)", level: .debug)
+                }
+                
+            case "seeked":
+                if let time = json["time"] as? TimeInterval {
+                    Logger.log("Seeked to time: \(time)", level: .debug)
+                    parent.currentVideoTime = time
+                }
+                
+            default:
+                Logger.log("Unknown event received: \(event)", level: .debug)
+            }
         }
     }
     
@@ -545,30 +661,28 @@ struct YouTubePlayerView: UIViewRepresentable {
     }
     
     func makeUIView(context: Context) -> WKWebView {
-        let preferences = WKWebpagePreferences()
-        preferences.allowsContentJavaScript = true
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
         
-        let config = WKWebViewConfiguration()
-        config.defaultWebpagePreferences = preferences
-        config.allowsInlineMediaPlayback = true
-        config.mediaTypesRequiringUserActionForPlayback = []
+        let userContentController = WKUserContentController()
+        userContentController.add(context.coordinator, name: "youtubePlayer")
+        configuration.userContentController = userContentController
         
-        let contentController = WKUserContentController()
-        contentController.add(context.coordinator, name: "youtubePlayer")
-        config.userContentController = contentController
-        
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
         webView.isOpaque = false
         webView.backgroundColor = .clear
-        webView.navigationDelegate = context.coordinator
+        webView.scrollView.backgroundColor = .clear
+        
+        webView.configuration.preferences.javaScriptEnabled = true
         
         webViewStore.webView = webView
         
-        if let videoID = TimelineCaptureView.getYouTubeVideoID(from: url) {
-            Logger.log("Loading YouTube video ID: \(videoID)", level: .debug)
-            
-            let html = """
+        Logger.log("Loading YouTube video ID: \(videoID)", level: .debug)
+        
+        let html = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -583,57 +697,15 @@ struct YouTubePlayerView: UIViewRepresentable {
                 <div class="container">
                     <div id="player"></div>
                 </div>
+                <script src="https://www.youtube.com/iframe_api"></script>
                 <script>
-                    var tag = document.createElement('script');
-                    tag.src = "https://www.youtube.com/iframe_api";
-                    var firstScriptTag = document.getElementsByTagName('script')[0];
-                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-                    
-                    var player;
-                    var timeUpdateInterval;
-                    var isPlayerReady = false;
-                    var seekQueue = [];
-                    
-                    function processSeekQueue() {
-                        if (seekQueue.length > 0 && isPlayerReady) {
-                            var seconds = seekQueue.shift();
-                            performSeek(seconds);
-                        }
-                    }
-                    
-                    function performSeek(seconds) {
-                        if (!player || !isPlayerReady) {
-                            seekQueue.push(seconds);
-                            return;
-                        }
-                        
-                        try {
-                            player.seekTo(seconds, true);
-                            player.playVideo();
-                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                                'event': 'seeked',
-                                'time': seconds
-                            }));
-                        } catch (error) {
-                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                                'event': 'error',
-                                'error': 'Seek error: ' + error.message
-                            }));
-                        }
-                    }
-                    
-                    window.seekToTime = function(seconds) {
-                        if (isPlayerReady) {
-                            performSeek(seconds);
-                        } else {
-                            seekQueue.push(seconds);
-                            setTimeout(function() {
-                                processSeekQueue();
-                            }, 500);
-                        }
-                    }
+                    let player;
+                    let isPlayerReady = false;
+                    let currentTime = 0;
+                    let timeUpdateInterval = null;
                     
                     function onYouTubeIframeAPIReady() {
+                        console.log('YouTube API Ready');
                         player = new YT.Player('player', {
                             videoId: '\(videoID)',
                             playerVars: {
@@ -641,33 +713,46 @@ struct YouTubePlayerView: UIViewRepresentable {
                                 'rel': 0,
                                 'controls': 1,
                                 'enablejsapi': 1,
-                                'origin': window.location.origin
+                                'origin': window.location.origin,
+                                'modestbranding': 1,
+                                'fs': 1
                             },
                             events: {
                                 'onReady': onPlayerReady,
-                                'onError': onPlayerError,
-                                'onStateChange': onPlayerStateChange
+                                'onStateChange': onPlayerStateChange,
+                                'onError': onPlayerError
                             }
                         });
+                    }
+                    
+                    function onPlayerReady(event) {
+                        console.log('Player Ready');
+                        isPlayerReady = true;
+                        startTimeUpdates();
+                        window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                            'event': 'ready'
+                        }));
                     }
                     
                     function startTimeUpdates() {
                         if (timeUpdateInterval) {
                             clearInterval(timeUpdateInterval);
                         }
-                        timeUpdateInterval = setInterval(function() {
-                            if (player && player.getCurrentTime && isPlayerReady) {
-                                try {
-                                    var currentTime = player.getCurrentTime();
-                                    window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                                        'event': 'timeUpdate',
-                                        'time': currentTime
-                                    }));
-                                } catch (error) {
-                                    console.error('Error getting current time:', error);
-                                }
+                        timeUpdateInterval = setInterval(updateCurrentTime, 100);
+                    }
+                    
+                    function updateCurrentTime() {
+                        if (player && player.getCurrentTime && isPlayerReady) {
+                            try {
+                                currentTime = player.getCurrentTime();
+                                window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                                    'event': 'timeUpdate',
+                                    'time': currentTime
+                                }));
+                            } catch (error) {
+                                console.error('Error updating time:', error);
                             }
-                        }, 200);
+                        }
                     }
                     
                     function stopTimeUpdates() {
@@ -677,35 +762,30 @@ struct YouTubePlayerView: UIViewRepresentable {
                         }
                     }
                     
-                    function onPlayerReady(event) {
-                        isPlayerReady = true;
+                    function onPlayerStateChange(event) {
+                        console.log('Player State Changed:', event.data);
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            startTimeUpdates();
+                        } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                            stopTimeUpdates();
+                        }
                         window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                            'event': 'ready'
+                            'event': 'stateChange',
+                            'state': event.data
                         }));
-                        startTimeUpdates();
-                        processSeekQueue();
                     }
                     
                     function onPlayerError(event) {
+                        console.error('Player Error:', event.data);
                         stopTimeUpdates();
                         isPlayerReady = false;
-                        var errorMessage = '';
+                        let errorMessage = 'Unknown error';
                         switch(event.data) {
-                            case 2:
-                                errorMessage = 'Invalid video ID';
-                                break;
-                            case 5:
-                                errorMessage = 'HTML5 player error';
-                                break;
-                            case 100:
-                                errorMessage = 'Video not found';
-                                break;
+                            case 2: errorMessage = 'Invalid video ID'; break;
+                            case 5: errorMessage = 'HTML5 player error'; break;
+                            case 100: errorMessage = 'Video not found'; break;
                             case 101:
-                            case 150:
-                                errorMessage = 'Video not playable in embedded player';
-                                break;
-                            default:
-                                errorMessage = 'Unknown error: ' + event.data;
+                            case 150: errorMessage = 'Video not playable in embedded player'; break;
                         }
                         window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                             'event': 'error',
@@ -713,21 +793,42 @@ struct YouTubePlayerView: UIViewRepresentable {
                         }));
                     }
                     
-                    function onPlayerStateChange(event) {
-                        var state = event.data;
-                        if (state === YT.PlayerState.PLAYING) {
-                            startTimeUpdates();
-                        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED) {
-                            stopTimeUpdates();
+                    window.seekVideo = function(seconds) {
+                        console.log('Seeking to:', seconds);
+                        if (!player || !isPlayerReady) {
+                            console.error('Player not ready');
+                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                                'event': 'error',
+                                'error': 'Player not ready'
+                            }));
+                            return;
                         }
                         
-                        window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                            'event': 'stateChange',
-                            'state': state
-                        }));
-                    }
+                        try {
+                            const targetTime = Math.round(seconds * 10) / 10;
+                            player.seekTo(targetTime, true);
+                            
+                            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                                player.playVideo();
+                            }
+                            
+                            currentTime = targetTime;
+                            
+                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                                'event': 'seeked',
+                                'time': targetTime
+                            }));
+                        } catch (error) {
+                            console.error('Seek error:', error);
+                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                                'event': 'error',
+                                'error': 'Seek error: ' + error.message
+                            }));
+                        }
+                    };
                     
                     window.onerror = function(message, source, lineno, colno, error) {
+                        console.error('JavaScript error:', message);
                         window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                             'event': 'error',
                             'error': 'JavaScript error: ' + message
@@ -738,36 +839,35 @@ struct YouTubePlayerView: UIViewRepresentable {
             </body>
             </html>
             """
-            
-            webView.loadHTMLString(html, baseURL: url)
-        }
+        
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
         
         return webView
     }
     
     func updateUIView(_ webView: WKWebView, context: Context) {
-        if context.coordinator.shouldUpdateOrientation(isLandscape) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                webView.setNeedsLayout()
-            }
-        }
-    }
-    
-    func seekToTime(_ seconds: TimeInterval) {
-        if isPlayerReady {
-            webViewStore.webView?.evaluateJavaScript("window.seekToTime(\(seconds));", completionHandler: { (result, error) in
-                if let error = error {
-                    Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                    onError("Failed to seek video: \(error.localizedDescription)")
-                }
-            })
-        } else {
-            pendingSeekTime = seconds
-            Logger.log("Player not ready, queuing seek to \(seconds)", level: .debug)
-        }
+        // Handle any updates if needed
     }
 }
 
 class WebViewStore: ObservableObject {
     weak var webView: WKWebView?
+}
+
+extension View {
+    func onRotate(perform action: @escaping (UIDeviceOrientation) -> Void) -> some View {
+        self.modifier(DeviceRotationViewModifier(action: action))
+    }
+}
+
+struct DeviceRotationViewModifier: ViewModifier {
+    let action: (UIDeviceOrientation) -> Void
+    
+    func body(content: Content) -> some View {
+        content
+            .onAppear()
+            .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+                action(UIDevice.current.orientation)
+            }
+    }
 }
