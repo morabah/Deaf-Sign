@@ -51,24 +51,34 @@ struct ContentView: View {
                     .padding(.vertical, 20)
                 }
             }
-            .navigationBarItems(trailing: settingsButton)
-            .sheet(isPresented: $showSettings) {
-                SettingsView(movieDatabase: movieDatabase)
+            .navigationBarHidden(true)
+        }
+        .onChange(of: movieDatabase.error != nil) { hasError in
+            if hasError, let error = movieDatabase.error {
+                alertMessage = error.localizedDescription
+                showingAlert = true
             }
-            .sheet(isPresented: $showCinemaView) {
-                CinemaView()
-                    .environmentObject(movieDatabase)
-            }
-            .sheet(isPresented: $showPlatformView) {
-                PlatformView()
-                    .environmentObject(movieDatabase)
-            }
-            .onAppear {
-                Logger.log("ContentView appeared", level: .debug)
-                verifyDataIntegrity()
-            }
-            
-            
+        }
+        .alert("Error", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(alertMessage)
+        }
+        .sheet(isPresented: $showCinemaView) {
+            CinemaView()
+                .environmentObject(movieDatabase)
+        }
+        .sheet(isPresented: $showPlatformView) {
+            PlatformView()
+                .environmentObject(movieDatabase)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(movieDatabase)
+        }
+        .onAppear {
+            Logger.log("ContentView appeared", level: .debug)
+            verifyDataIntegrity()
         }
     }
     
@@ -83,14 +93,12 @@ struct ContentView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
-                    .accessibilityLabel("Welcome message for \(userName)")
             }
             
             HStack {
                 Text("📦 Nuby")
                     .font(.title2)
                     .fontWeight(.semibold)
-                    .accessibilityLabel("App title: Nuby")
                 
                 Spacer()
                 
@@ -105,7 +113,6 @@ struct ContentView: View {
                         .padding(8)
                         .background(Color.blue.opacity(0.1))
                         .clipShape(Circle())
-                        .accessibilityLabel("Open Settings")
                 }
             }
             .padding(.horizontal)
@@ -126,10 +133,8 @@ struct ContentView: View {
                     performSearch(query: searchText)
                 }
                 .onChange(of: searchText) { _, newValue in
-                    searchDebounceTimer?.invalidate()
-                    searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
-                        performSearch(query: newValue)
-                    }
+                    // Immediate filtering for better responsiveness
+                    performSearch(query: newValue)
                 }
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
@@ -144,6 +149,7 @@ struct ContentView: View {
                 .padding(.horizontal)
             
             let filteredMovies = movieDatabase.searchMovies(query: searchText)
+            
             if filteredMovies.isEmpty {
                 Text("No movies found")
                     .foregroundColor(.gray)
@@ -153,8 +159,10 @@ struct ContentView: View {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(filteredMovies) { movie in
-                            MovieRow(movie: movie)
-                                .padding(.horizontal)
+                            NavigationLink(destination: TimelineCaptureView(movie: movie)) {
+                                MovieRow(movie: movie)
+                                    .padding(.horizontal)
+                            }
                         }
                     }
                 }
@@ -167,11 +175,10 @@ struct ContentView: View {
             Text("Last 5 Added Movies")
                 .font(.headline)
                 .padding(.horizontal)
-                .accessibilityAddTraits(.isHeader)
             
             let recentMovies = movieDatabase.movies.prefix(5)
             if recentMovies.isEmpty {
-                Text("No recently added movies available.")
+                Text("No recently added movies")
                     .foregroundColor(.gray)
                     .padding(.horizontal)
                     .padding(.vertical, 5)
@@ -181,7 +188,6 @@ struct ContentView: View {
                         ForEach(recentMovies) { movie in
                             NavigationLink(destination: TimelineCaptureView(movie: movie)) {
                                 MoviePosterView(movie: movie)
-                                    .accessibilityLabel("Open details for \(movie.title)")
                             }
                         }
                     }
@@ -209,37 +215,16 @@ struct ContentView: View {
         }
     }
     
-    private var settingsButton: some View {
-        HStack {
-            Button(action: {
-                do {
-                    try authManager.signOut()
-                } catch {
-                    showingAlert = true
-                    alertMessage = error.localizedDescription
-                }
-            }) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .imageScale(.large)
-            }
-        }
-        .alert("Error", isPresented: $showingAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(alertMessage)
-        }
-    }
-    
     // MARK: - Helper Methods
     
     private func performSearch(query: String) {
-        Logger.log("Performing search for: \(query)", level: .debug)
-        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        // Perform the search immediately for better responsiveness
+        let filteredMovies = movieDatabase.searchMovies(query: query)
+        Logger.log("Search performed with query: '\(query)'. Found \(filteredMovies.count) matching titles", level: .debug)
     }
     
     private func verifyDataIntegrity() {
         Logger.log("Verifying data integrity", level: .debug)
-        // Add data validation logic here
     }
 }
 
@@ -247,6 +232,6 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
             .environmentObject(MovieDatabase())
-            .environmentObject(AuthenticationManager.shared)
+            .environmentObject(AuthenticationManager())
     }
 }

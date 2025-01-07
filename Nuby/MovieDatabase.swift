@@ -295,17 +295,15 @@ class MovieDatabase: ObservableObject {
         }
     }
     
-    /// Search for movies based on a query string
+    /// Search for movies based on title
     /// - Parameter query: The search query
-    /// - Returns: Array of matching movies
+    /// - Returns: Array of movies with matching titles
     func searchMovies(query: String) -> [Movie] {
         if query.isEmpty {
             return movies
         }
         return movies.filter { movie in
-            movie.title.localizedCaseInsensitiveContains(query) ||
-            movie.cinema.name.localizedCaseInsensitiveContains(query) ||
-            movie.cinema.location.localizedCaseInsensitiveContains(query)
+            movie.title.localizedCaseInsensitiveContains(query)
         }
     }
     
