@@ -100,25 +100,83 @@ struct TimelineCaptureView: View {
             VStack {
                 HStack {
                     Spacer()
-                    Button(action: {
-                        withAnimation {
-                            showTimeControls.toggle()
+                    VStack(alignment: .trailing, spacing: 8) {
+                        HStack {
+                            if showTimeControls {
+                                Text(formatVideoTime(currentVideoTime))
+                                    .font(.system(size: 32, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.black.opacity(0.7))
+                                    )
+                            }
+                            Button(action: {
+                                withAnimation {
+                                    showTimeControls.toggle()
+                                }
+                            }) {
+                                Image(systemName: "clock.circle.fill")
+                                    .resizable()
+                                    .frame(width: 44, height: 44)
+                                    .foregroundColor(.white)
+                                    .background(Circle().fill(Color.black.opacity(0.5)))
+                                    .padding()
+                            }
                         }
-                    }) {
-                        Image(systemName: "clock.circle.fill")
-                            .resizable()
-                            .frame(width: 44, height: 44)
-                            .foregroundColor(.white)
-                            .background(Circle().fill(Color.black.opacity(0.5)))
+                        
+                        if showTimeControls {
+                            // Time Control Buttons
+                            HStack(spacing: 24) {
+                                // Decrease Time Button
+                                TimeControlButton(
+                                    action: { seekRelativeTime(-1.0) },
+                                    symbol: "minus.circle.fill",
+                                    size: 44,
+                                    color: .white
+                                )
+                                
+                                // Fine Control Buttons
+                                VStack(spacing: 8) {
+                                    // Fine Increase Button (+0.1s)
+                                    TimeControlButton(
+                                        action: { seekRelativeTime(minSeekStep) },
+                                        symbol: "plus.circle",
+                                        size: 32,
+                                        color: .white,
+                                        label: "+0.1s"
+                                    )
+                                    
+                                    // Fine Decrease Button (-0.1s)
+                                    TimeControlButton(
+                                        action: { seekRelativeTime(-minSeekStep) },
+                                        symbol: "minus.circle",
+                                        size: 32,
+                                        color: .white,
+                                        label: "-0.1s"
+                                    )
+                                }
+                                
+                                // Increase Time Button
+                                TimeControlButton(
+                                    action: { seekRelativeTime(1.0) },
+                                    symbol: "plus.circle.fill",
+                                    size: 44,
+                                    color: .white
+                                )
+                            }
                             .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.black.opacity(0.7))
+                            )
+                            .transition(.move(edge: .trailing))
+                        }
                     }
                 }
                 Spacer()
-                
-                if showTimeControls {
-                    timeControlView
-                        .transition(.move(edge: .bottom))
-                }
             }
         }
         .navigationBarHidden(true)
