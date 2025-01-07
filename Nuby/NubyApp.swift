@@ -4,7 +4,6 @@
 //
 //  Created by Mohamed Rabah on 05/12/2024.
 //
-
 import SwiftUI
 import Foundation
 import GoogleSignIn
@@ -85,7 +84,7 @@ struct NubyApp: App {
                         accessToken: user.accessToken.tokenString
                     )
                     
-                    let result = try await Auth.auth().signIn(with: credential)
+                    try? await Auth.auth().signIn(with: credential)
                     authManager.isAuthenticated = true
                     Logger.log("Successfully restored Google Sign-In session", level: .info)
                 }

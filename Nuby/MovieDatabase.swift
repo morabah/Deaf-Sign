@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 import os.log
+import Network
 
 /// Class responsible for managing the movie database
 @MainActor
@@ -14,9 +15,33 @@ class MovieDatabase: ObservableObject {
     private let db = Firestore.firestore()
     private var authListener: AuthStateDidChangeListenerHandle?
     private var moviesListener: ListenerRegistration?
+    private let networkMonitor = NWPathMonitor()
+    private let monitorQueue = DispatchQueue(label: "com.nuby.networkMonitor")
+    private var isNetworkAvailable = true
     
     init() {
+        setupNetworkMonitoring()
         setupAuthListener()
+    }
+    
+    private func setupNetworkMonitoring() {
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                self?.isNetworkAvailable = path.status == .satisfied
+                
+                if path.status == .satisfied {
+                    Logger.log("Network connection established", level: .info)
+                    // Retry any pending operations
+                    if let self = self, self.movies.isEmpty {
+                        self.setupMoviesListener()
+                    }
+                } else {
+                    Logger.log("Network connection lost", level: .error)
+                    self?.error = MovieError.networkError
+                }
+            }
+        }
+        networkMonitor.start(queue: monitorQueue)
     }
     
     private func setupAuthListener() {
@@ -34,8 +59,14 @@ class MovieDatabase: ObservableObject {
     }
     
     private func setupMoviesListener() {
+        guard isNetworkAvailable else {
+            self.error = MovieError.networkError
+            return
+        }
+        
         guard let userId = Auth.auth().currentUser?.uid else {
             Logger.log("No authenticated user found", level: .error)
+            self.error = MovieError.notAuthenticated
             return
         }
         
@@ -45,16 +76,28 @@ class MovieDatabase: ObservableObject {
         let query = db.collection("movies")
             .whereField("userId", isEqualTo: userId)
             .order(by: "updatedAt", descending: true)
+            .limit(to: 100)  // Add reasonable limit for performance
         
         Logger.log("Setting up movies listener for user: \(userId)", level: .debug)
         
         moviesListener = query.addSnapshotListener { [weak self] snapshot, error in
-            guard let self = self else { return }
-            defer { self.isLoading = false }
+            guard let self = self else { 
+                Logger.log("Self reference lost in snapshot listener", level: .error)
+                return 
+            }
+            
+            defer { 
+                self.isLoading = false 
+                Logger.log("Movies listener processing completed", level: .debug)
+            }
             
             if let error = error {
                 Logger.log("Error fetching movies: \(error.localizedDescription)", level: .error)
-                self.error = error
+                if (error as NSError).domain == NSURLErrorDomain {
+                    self.error = MovieError.networkError
+                } else {
+                    self.error = MovieError.databaseError(error)
+                }
                 return
             }
             
@@ -64,89 +107,75 @@ class MovieDatabase: ObservableObject {
                 return
             }
             
-            Logger.log("Fetched \(documents.count) movies", level: .debug)
+            Logger.log("Processing \(documents.count) movies", level: .debug)
             
-            self.movies = documents.compactMap { document in
-                do {
-                    var data = document.data()
-                    Logger.log("Processing document: \(document.documentID)", level: .debug)
-                    
-                    // Ensure required fields exist
-                    guard let title = data["title"] as? String,
-                          let sourceRaw = data["source"] as? String,
-                          let source = MovieSource(rawValue: sourceRaw) else {
-                        Logger.log("Missing required fields in document: \(document.documentID)", level: .error)
-                        return nil
-                    }
-                    
-                    // Handle ID conversion
-                    if let idString = data["id"] as? String {
-                        if let id = UUID(uuidString: idString) {
-                            data["id"] = id.uuidString // Keep as string for JSON serialization
-                        } else {
-                            Logger.log("Invalid UUID string in document: \(idString)", level: .error)
-                            return nil
-                        }
-                    } else {
-                        data["id"] = UUID().uuidString // Keep as string for JSON serialization
-                    }
-                    
-                    // Add Firestore ID and userId
-                    data["firestoreId"] = document.documentID
-                    data["userId"] = userId
-                    
-                    // Convert Timestamps to ISO8601 date strings for JSON serialization
-                    if let createdAt = data["createdAt"] as? Timestamp {
-                        let dateString = ISO8601DateFormatter().string(from: createdAt.dateValue())
-                        data["createdAt"] = dateString
-                    }
-                    
-                    if let updatedAt = data["updatedAt"] as? Timestamp {
-                        let dateString = ISO8601DateFormatter().string(from: updatedAt.dateValue())
-                        data["updatedAt"] = dateString
-                    }
-                    
-                    if let releaseDate = data["releaseDate"] as? Timestamp {
-                        let dateString = ISO8601DateFormatter().string(from: releaseDate.dateValue())
-                        data["releaseDate"] = dateString
-                    }
-                    
-                    // Ensure cinema information
-                    if let cinemaData = data["cinema"] as? [String: Any] {
-                        var updatedCinema = cinemaData
-                        if cinemaData["id"] == nil {
-                            updatedCinema["id"] = UUID().uuidString
-                        } else if let cinemaId = cinemaData["id"] as? String {
-                            updatedCinema["id"] = cinemaId
-                        }
-                        data["cinema"] = updatedCinema
-                    } else {
-                        data["cinema"] = [
-                            "id": UUID().uuidString,
-                            "name": "",
-                            "location": ""
-                        ]
-                    }
-                    
-                    let jsonData = try JSONSerialization.data(withJSONObject: data)
-                    let decoder = JSONDecoder()
-                    decoder.dateDecodingStrategy = .iso8601
-                    let movie = try decoder.decode(Movie.self, from: jsonData)
-                    return movie
-                    
-                } catch {
-                    Logger.log("Error decoding movie document: \(error.localizedDescription)", level: .error)
+            self.processMovieDocuments(documents)
+        }
+    }
+    
+    private func processMovieDocuments(_ documents: [QueryDocumentSnapshot]) {
+        let processedMovies: [Movie] = documents.compactMap { document -> Movie? in
+            do {
+                var data = document.data()
+                
+                // Validate required fields
+                guard let title = data["title"] as? String,
+                      let sourceRaw = data["source"] as? String,
+                      let source = MovieSource(rawValue: sourceRaw) else {
+                    Logger.log("Invalid document format: \(document.documentID)", level: .error)
                     return nil
                 }
+                
+                // Process ID
+                let movieId = data["id"] as? String ?? UUID().uuidString
+                guard UUID(uuidString: movieId) != nil else {
+                    Logger.log("Invalid UUID format: \(movieId)", level: .error)
+                    return nil
+                }
+                data["id"] = movieId
+                
+                // Process metadata
+                data["firestoreId"] = document.documentID
+                data["userId"] = Auth.auth().currentUser?.uid
+                
+                // Process dates with better error handling
+                let dateFormatter = ISO8601DateFormatter()
+                for field in ["createdAt", "updatedAt", "releaseDate"] {
+                    if let timestamp = data[field] as? Timestamp {
+                        data[field] = dateFormatter.string(from: timestamp.dateValue())
+                    }
+                }
+                
+                // Process cinema data
+                let cinema = data["cinema"] as? [String: Any] ?? [:]
+                data["cinema"] = [
+                    "id": cinema["id"] as? String ?? UUID().uuidString,
+                    "name": cinema["name"] as? String ?? "",
+                    "location": cinema["location"] as? String ?? ""
+                ]
+                
+                let jsonData = try JSONSerialization.data(withJSONObject: data)
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                return try decoder.decode(Movie.self, from: jsonData)
+                
+            } catch {
+                Logger.log("Error processing document \(document.documentID): \(error)", level: .error)
+                return nil
             }
-            
-            Logger.log("Successfully processed \(self.movies.count) movies", level: .info)
         }
+        
+        self.movies = processedMovies
+        Logger.log("Successfully processed \(processedMovies.count) movies", level: .info)
     }
     
     /// Add a new movie to the database
     /// - Parameter movie: The movie to add
     func addMovie(_ movie: Movie) async throws {
+        guard isNetworkAvailable else {
+            throw MovieError.networkError
+        }
+        
         guard let userId = Auth.auth().currentUser?.uid else {
             throw MovieError.notAuthenticated
         }
@@ -190,6 +219,10 @@ class MovieDatabase: ObservableObject {
     /// Update an existing movie in the database
     /// - Parameter movie: The updated movie
     func updateMovie(_ movie: Movie) async throws {
+        guard isNetworkAvailable else {
+            throw MovieError.networkError
+        }
+        
         guard let userId = Auth.auth().currentUser?.uid else {
             throw MovieError.notAuthenticated
         }
@@ -221,7 +254,7 @@ class MovieDatabase: ObservableObject {
         
         do {
             Logger.log("Updating movie: \(movie.title)", level: .debug)
-            try await db.collection("movies").document(movie.firestoreId).setData(data, merge: true)
+            try await db.collection("movies").document(movie.firestoreId).updateData(data)
             Logger.log("Successfully updated movie: \(movie.title)", level: .info)
         } catch {
             Logger.log("Failed to update movie: \(error.localizedDescription)", level: .error)
@@ -232,6 +265,10 @@ class MovieDatabase: ObservableObject {
     /// Delete a movie from the database
     /// - Parameter movie: The movie to delete
     func deleteMovie(_ movie: Movie) async throws {
+        guard isNetworkAvailable else {
+            throw MovieError.networkError
+        }
+        
         guard Auth.auth().currentUser?.uid != nil else {
             throw MovieError.notAuthenticated
         }
@@ -243,6 +280,18 @@ class MovieDatabase: ObservableObject {
         } catch {
             Logger.log("Failed to delete movie: \(error.localizedDescription)", level: .error)
             throw MovieError.databaseError(error)
+        }
+    }
+    
+    /// Filter movies based on title and source
+    /// - Parameters:
+    ///   - title: Optional title to filter by
+    ///   - source: Optional source to filter by
+    /// - Returns: Filtered array of movies
+    func filterMovies(title: String?, source: MovieSource?) -> [Movie] {
+        return movies.filter { movie in
+            (title == nil || movie.title.localizedCaseInsensitiveContains(title!)) &&
+            (source == nil || movie.source == source!)
         }
     }
     
@@ -261,6 +310,7 @@ class MovieDatabase: ObservableObject {
     }
     
     deinit {
+        networkMonitor.cancel()
         if let listener = authListener {
             Auth.auth().removeStateDidChangeListener(listener)
         }

@@ -1,5 +1,6 @@
 import SwiftUI
 import os.log
+import UIKit
 
 /// Main settings view for managing movie library and app preferences
 struct SettingsView: View {
@@ -318,13 +319,73 @@ struct MovieAddSheet: View {
     @State private var cinemaLocation = ""
     @State private var releaseDate = Date()
     @State private var isLoading = false
+    @State private var hasYouTubeInClipboard = false
+    
+    private func checkClipboardForYouTubeLink() {
+        if let clipboardString = UIPasteboard.general.string,
+           let url = URL(string: clipboardString),
+           TimelineCaptureView.isYouTubeURL(url) {
+            hasYouTubeInClipboard = true
+        } else {
+            hasYouTubeInClipboard = false
+        }
+    }
+    
+    private func pasteFromClipboard() {
+        if let clipboardString = UIPasteboard.general.string,
+           let url = URL(string: clipboardString),
+           TimelineCaptureView.isYouTubeURL(url) {
+            link = clipboardString
+        }
+    }
+    
+    // URL validation helper
+    private func validateAndFormatURL(_ urlString: String) -> String {
+        var formattedString = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If empty string, return as is
+        if formattedString.isEmpty {
+            return formattedString
+        }
+        
+        // If URL doesn't start with a protocol, add https://
+        if !formattedString.lowercased().hasPrefix("http") {
+            formattedString = "https://" + formattedString
+        }
+        
+        // If URL starts with http://, replace with https://
+        if formattedString.lowercased().hasPrefix("http://") {
+            formattedString = "https://" + formattedString.dropFirst("http://".count)
+        }
+        
+        // If URL doesn't have www. after https://, add it
+        if formattedString.lowercased().hasPrefix("https://") && !formattedString.lowercased().hasPrefix("https://www.") {
+            formattedString = formattedString.replacingOccurrences(of: "https://", with: "https://www.")
+        }
+        
+        return formattedString
+    }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section(header: Text("Movie Details")) {
                     TextField("Title", text: $title)
-                    TextField("Link", text: $link)
+                    HStack {
+                        TextField("Link", text: $link)
+                            .onChange(of: link) { oldValue, newValue in
+                                link = validateAndFormatURL(newValue)
+                            }
+                            .onAppear {
+                                checkClipboardForYouTubeLink()
+                            }
+                        if hasYouTubeInClipboard {
+                            Button(action: pasteFromClipboard) {
+                                Image(systemName: "doc.on.clipboard")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
                     Picker("Source", selection: $source) {
                         Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)
@@ -403,6 +464,25 @@ struct MovieEditSheet: View {
     @State private var cinemaLocation: String
     @State private var releaseDate: Date
     @State private var isLoading = false
+    @State private var hasYouTubeInClipboard = false
+    
+    private func checkClipboardForYouTubeLink() {
+        if let clipboardString = UIPasteboard.general.string,
+           let url = URL(string: clipboardString),
+           TimelineCaptureView.isYouTubeURL(url) {
+            hasYouTubeInClipboard = true
+        } else {
+            hasYouTubeInClipboard = false
+        }
+    }
+    
+    private func pasteFromClipboard() {
+        if let clipboardString = UIPasteboard.general.string,
+           let url = URL(string: clipboardString),
+           TimelineCaptureView.isYouTubeURL(url) {
+            link = clipboardString
+        }
+    }
     
     init(movie: Movie, onSave: @escaping (Movie) -> Void, onCancel: @escaping () -> Void) {
         self.movie = movie
@@ -417,12 +497,53 @@ struct MovieEditSheet: View {
         _releaseDate = State(initialValue: movie.releaseDate ?? Date())
     }
     
+    // URL validation helper
+    private func validateAndFormatURL(_ urlString: String) -> String {
+        var formattedString = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If empty string, return as is
+        if formattedString.isEmpty {
+            return formattedString
+        }
+        
+        // If URL doesn't start with a protocol, add https://
+        if !formattedString.lowercased().hasPrefix("http") {
+            formattedString = "https://" + formattedString
+        }
+        
+        // If URL starts with http://, replace with https://
+        if formattedString.lowercased().hasPrefix("http://") {
+            formattedString = "https://" + formattedString.dropFirst("http://".count)
+        }
+        
+        // If URL doesn't have www. after https://, add it
+        if formattedString.lowercased().hasPrefix("https://") && !formattedString.lowercased().hasPrefix("https://www.") {
+            formattedString = formattedString.replacingOccurrences(of: "https://", with: "https://www.")
+        }
+        
+        return formattedString
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
                 Section(header: Text("Movie Details")) {
                     TextField("Title", text: $title)
-                    TextField("Link", text: $link)
+                    HStack {
+                        TextField("Link", text: $link)
+                            .onChange(of: link) { oldValue, newValue in
+                                link = validateAndFormatURL(newValue)
+                            }
+                            .onAppear {
+                                checkClipboardForYouTubeLink()
+                            }
+                        if hasYouTubeInClipboard {
+                            Button(action: pasteFromClipboard) {
+                                Image(systemName: "doc.on.clipboard")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
                     Picker("Source", selection: $source) {
                         Text("Cinema").tag(MovieSource.cinema)
                         Text("Platform").tag(MovieSource.platform)

@@ -23,6 +23,8 @@
 	<string>320052988789-cajc0sdv5lu1ef0p24egrn2ve9o1a239.apps.googleusercontent.com</string>
 	<key>LastAccessedDate</key>
 	<date>2025-01-02T01:43:32Z</date>
+	<key>NSApplicationCrashOnExceptions</key>
+	<string>yes</string>
 	<key>WorkspacePath</key>
 	<string>/Volumes/Rabah_SSD/deaf sign 3/Deaf-Sign/Nuby.xcodeproj</string>
 </dict>

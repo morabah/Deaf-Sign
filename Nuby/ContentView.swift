@@ -143,32 +143,23 @@ struct ContentView: View {
                 .font(.headline)
                 .padding(.horizontal)
             
-            let searchResults = movieDatabase.searchMovies(query: searchText)
-            if searchResults.isEmpty {
+            let filteredMovies = movieDatabase.searchMovies(query: searchText)
+            if filteredMovies.isEmpty {
                 Text("No movies found")
                     .foregroundColor(.gray)
                     .padding(.horizontal)
                     .padding(.vertical, 5)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 15) {
-                        ForEach(searchResults) { movie in
-                            NavigationLink(destination: TimelineCaptureView(movie: movie)) {
-                                Text(movie.title)
-                                    .padding(8)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(10)
-                                    .foregroundColor(.primary)
-                                    .accessibilityLabel("Movie: \(movie.title)")
-                            }
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        ForEach(filteredMovies) { movie in
+                            MovieRow(movie: movie)
+                                .padding(.horizontal)
                         }
                     }
-                    .padding(.horizontal)
                 }
-                .padding(.bottom, 10)
             }
         }
-        .transition(.opacity)
     }
     
     private var recentMoviesView: some View {
