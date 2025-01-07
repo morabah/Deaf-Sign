@@ -509,8 +509,8 @@ struct TimelineCaptureView: View {
     private func setupYouTubeView() {
         if youtubeView == nil,
            let url = URL(string: movie.posterImage ?? ""),
-           Self.isYouTubeURL(url),
-           let videoID = Self.getYouTubeVideoID(from: url) {
+           YouTubeURLUtility.isYouTubeURL(url),
+           let videoID = YouTubeURLUtility.getYouTubeVideoID(from: url) {
             
             DispatchQueue.main.async {
                 youtubeView = YouTubePlayerView(
@@ -527,52 +527,8 @@ struct TimelineCaptureView: View {
         }
     }
     
-    internal static func isYouTubeURL(_ url: URL) -> Bool {
-        guard let host = url.host?.lowercased() else { return false }
-        return host.contains("youtube.com") || host.contains("youtu.be")
-    }
-    
-    internal static func getYouTubeVideoID(from url: URL) -> String? {
-        guard let host = url.host?.lowercased() else { return nil }
-        
-        if host.contains("youtu.be") {
-            return url.lastPathComponent
-        } else if host.contains("youtube.com") {
-            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                  let videoID = components.queryItems?.first(where: { $0.name == "v" })?.value,
-                  !videoID.isEmpty else {
-                return nil
-            }
-            return videoID
-        }
-        return nil
-    }
-    
-    internal static func getYouTubeEmbedURL(from url: URL) -> URL? {
-        guard let videoID = getYouTubeVideoID(from: url) else { return nil }
-        let embedURLString = "https://www.youtube.com/embed/\(videoID)?enablejsapi=1&playsinline=1&controls=1&rel=0&modestbranding=1&origin=\(Bundle.main.bundleIdentifier ?? "app")"
-        return URL(string: embedURLString)
-    }
-    
-    internal static func validateAndFormatURL(_ urlString: String) -> URL? {
-        var formattedString = urlString
-        
-        // If URL doesn't start with a protocol, add https://
-        if !formattedString.lowercased().hasPrefix("http") {
-            formattedString = "https://" + formattedString
-        }
-        
-        // If URL starts with http://, replace with https://
-        if formattedString.lowercased().hasPrefix("http://") {
-            formattedString = "https://" + formattedString.dropFirst("http://".count)
-        }
-        
-        // If URL doesn't have www. after https://, add it
-        if formattedString.lowercased().hasPrefix("https://") && !formattedString.lowercased().hasPrefix("https://www.") {
-            formattedString = formattedString.replacingOccurrences(of: "https://", with: "https://www.")
-        }
-        
-        return URL(string: formattedString)
+    private static func validateAndFormatURL(_ urlString: String) -> URL? {
+        return YouTubeURLUtility.validateAndFormatURL(urlString)
     }
     
     private func setupYouTubeTimeUpdates() {

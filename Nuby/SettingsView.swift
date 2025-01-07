@@ -324,7 +324,7 @@ struct MovieAddSheet: View {
     private func checkClipboardForYouTubeLink() {
         if let clipboardString = UIPasteboard.general.string,
            let url = URL(string: clipboardString),
-           TimelineCaptureView.isYouTubeURL(url) {
+           YouTubeURLUtility.isYouTubeURL(url) {
             hasYouTubeInClipboard = true
         } else {
             hasYouTubeInClipboard = false
@@ -334,7 +334,7 @@ struct MovieAddSheet: View {
     private func pasteFromClipboard() {
         if let clipboardString = UIPasteboard.general.string,
            let url = URL(string: clipboardString),
-           TimelineCaptureView.isYouTubeURL(url) {
+           YouTubeURLUtility.isYouTubeURL(url) {
             link = clipboardString
         }
     }
@@ -469,7 +469,7 @@ struct MovieEditSheet: View {
     private func checkClipboardForYouTubeLink() {
         if let clipboardString = UIPasteboard.general.string,
            let url = URL(string: clipboardString),
-           TimelineCaptureView.isYouTubeURL(url) {
+           YouTubeURLUtility.isYouTubeURL(url) {
             hasYouTubeInClipboard = true
         } else {
             hasYouTubeInClipboard = false
@@ -479,7 +479,7 @@ struct MovieEditSheet: View {
     private func pasteFromClipboard() {
         if let clipboardString = UIPasteboard.general.string,
            let url = URL(string: clipboardString),
-           TimelineCaptureView.isYouTubeURL(url) {
+           YouTubeURLUtility.isYouTubeURL(url) {
             link = clipboardString
         }
     }

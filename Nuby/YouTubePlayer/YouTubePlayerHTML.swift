@@ -9,8 +9,21 @@ struct YouTubePlayerHTML {
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
                 body { margin: 0; background-color: transparent; }
-                .container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
-                #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+                .container { 
+                    position: relative; 
+                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+                    height: 0; 
+                    overflow: hidden; 
+                    transition: all 0.3s ease; /* Smooth transition */
+                }
+                #player { 
+                    position: absolute; 
+                    top: 0; 
+                    left: 0; 
+                    width: 100%; 
+                    height: 100%; 
+                    transition: all 0.3s ease; /* Smooth transition */
+                }
             </style>
         </head>
         <body>
@@ -24,7 +37,30 @@ struct YouTubePlayerHTML {
                 let currentTime = 0;
                 let timeUpdateInterval = null;
                 let pendingSeek = null;
-                
+
+                // Function to handle orientation changes
+                function handleOrientationChange() {
+                    const container = document.querySelector('.container');
+                    const playerElement = document.getElementById('player');
+                    if (window.orientation === 90 || window.orientation === -90) {
+                        // Landscape mode
+                        container.style.paddingBottom = '0';
+                        container.style.height = '100vh';
+                        playerElement.style.width = '100vw';
+                        playerElement.style.height = '100vh';
+                    } else {
+                        // Portrait mode
+                        container.style.paddingBottom = '56.25%';
+                        container.style.height = '0';
+                        playerElement.style.width = '100%';
+                        playerElement.style.height = '100%';
+                    }
+                }
+
+                // Add orientation change listener
+                window.addEventListener('orientationchange', handleOrientationChange);
+                window.addEventListener('resize', handleOrientationChange);
+
                 function onYouTubeIframeAPIReady() {
                     console.log('YouTube API Ready');
                     player = new YT.Player('player', {
@@ -45,7 +81,7 @@ struct YouTubePlayerHTML {
                         }
                     });
                 }
-                
+
                 function onPlayerReady(event) {
                     console.log('Player Ready');
                     isPlayerReady = true;
@@ -53,21 +89,24 @@ struct YouTubePlayerHTML {
                     window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                         'event': 'ready'
                     }));
-                    
+
                     // Handle any pending seek operation
                     if (pendingSeek !== null) {
                         seekVideo(pendingSeek);
                         pendingSeek = null;
                     }
+
+                    // Initialize orientation handling
+                    handleOrientationChange();
                 }
-                
+
                 function startTimeUpdates() {
                     if (timeUpdateInterval) {
                         clearInterval(timeUpdateInterval);
                     }
                     timeUpdateInterval = setInterval(updateCurrentTime, 100);
                 }
-                
+
                 function updateCurrentTime() {
                     if (player && player.getCurrentTime && isPlayerReady) {
                         try {
@@ -85,14 +124,14 @@ struct YouTubePlayerHTML {
                         }
                     }
                 }
-                
+
                 function stopTimeUpdates() {
                     if (timeUpdateInterval) {
                         clearInterval(timeUpdateInterval);
                         timeUpdateInterval = null;
                     }
                 }
-                
+
                 function onPlayerStateChange(event) {
                     console.log('Player State Changed:', event.data);
                     if (event.data === YT.PlayerState.PLAYING) {
@@ -105,7 +144,7 @@ struct YouTubePlayerHTML {
                         'state': event.data
                     }));
                 }
-                
+
                 function onPlayerError(event) {
                     console.error('Player Error:', event.data);
                     stopTimeUpdates();
@@ -123,7 +162,7 @@ struct YouTubePlayerHTML {
                         'error': errorMessage
                     }));
                 }
-                
+
                 window.seekVideo = function(seconds) {
                     console.log('Seeking to:', seconds);
                     if (!player || !isPlayerReady) {
@@ -131,15 +170,15 @@ struct YouTubePlayerHTML {
                         pendingSeek = seconds;
                         return;
                     }
-                    
+
                     try {
                         const targetTime = Math.round(seconds * 10) / 10;
                         player.seekTo(targetTime, true);
-                        
+
                         if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
                             player.playVideo();
                         }
-                        
+
                         window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                             'event': 'seeked',
                             'time': targetTime
@@ -152,7 +191,7 @@ struct YouTubePlayerHTML {
                         }));
                     }
                 };
-                
+
                 window.onerror = function(message, source, lineno, colno, error) {
                     console.error('JavaScript error:', message);
                     window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({

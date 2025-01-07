@@ -25,6 +25,10 @@
 	<date>2025-01-02T01:43:32Z</date>
 	<key>NSApplicationCrashOnExceptions</key>
 	<string>yes</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>WorkspacePath</key>
 	<string>/Volumes/Rabah_SSD/deaf sign 3/Deaf-Sign/Nuby.xcodeproj</string>
 </dict>
