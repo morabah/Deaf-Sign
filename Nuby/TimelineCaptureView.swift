@@ -5,6 +5,15 @@ import os.log
 struct TimelineCaptureView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var movieDatabase: MovieDatabase
+    @StateObject private var webViewStore = WebViewStore()
+    @State private var currentVideoTime: TimeInterval = 0
+    @State private var lastKnownTime: TimeInterval = 0
+    @State private var isPlayerReady: Bool = false
+    @State private var showTimeControls = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var orientation = UIDevice.current.orientation
+    @State private var youtubeView: YouTubePlayerView?
     @State private var showingCamera = false
     @State private var capturedNumbers: [Int]?
     @State private var recognizedTimeline: String?
@@ -12,23 +21,17 @@ struct TimelineCaptureView: View {
     @State private var captureTimestamp: Date?
     @State private var displayTimestamp: Date?
     @State private var totalDelay: TimeInterval?
-    @State private var webViewStore = WebViewStore()
-    @State private var showError = false
-    @State private var errorMessage = ""
-    @State private var isLandscape = false
-    @State private var currentVideoTime: TimeInterval = 0
     @State private var isUpdatingTime = false
-    @State private var showTimeControls = false
-    @State private var orientation = UIDevice.current.orientation
+    @State private var isLandscape = false
+    
+    private let movieId: UUID
+    private let originalMovie: Movie
     private let updateInterval: TimeInterval = 0.1 // 100ms update interval
     private let minSeekStep: Double = 0.1 // Minimum seek step (100ms)
     
     private var movie: Movie {
         movieDatabase.movies.first { $0.id == movieId } ?? originalMovie
     }
-    
-    private let movieId: UUID
-    private let originalMovie: Movie
     
     init(movie: Movie) {
         self.movieId = movie.id
@@ -37,26 +40,35 @@ struct TimelineCaptureView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                if orientation.isLandscape {
-                    // Landscape Mode
-                    landscapeLayout
-                } else {
-                    // Portrait Mode
-                    portraitLayout
+        Group {
+            if orientation.isLandscape {
+                landscapeLayout
+            } else {
+                portraitLayout
+            }
+        }
+        .onAppear {
+            setupYouTubeView()
+            setupOrientationChangeNotification()
+            setupYouTubeTimeUpdates()
+        }
+        .onRotate { newOrientation in
+            // Store the current time before orientation change
+            lastKnownTime = currentVideoTime
+            orientation = newOrientation
+            
+            // After orientation change, restore the time
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let webView = webViewStore.webView {
+                    seekToTime(webView: webView, time: lastKnownTime)
                 }
             }
         }
+        .alert(isPresented: $showError) {
+            Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
+        }
         .navigationBarTitle("", displayMode: .inline)
         .navigationBarItems(trailing: closeButton)
-        .alert(isPresented: $showError) {
-            Alert(
-                title: Text("Error"),
-                message: Text(errorMessage),
-                dismissButton: .default(Text("OK"))
-            )
-        }
         .sheet(isPresented: $showingCamera) {
             CameraView(movie: movie) { numbers in
                 handleCapturedNumbers(numbers)
@@ -67,44 +79,24 @@ struct TimelineCaptureView: View {
                 handleCapturedNumbers(numbers)
             }
         }
-        .onAppear {
-            setupOrientationChangeNotification()
-            setupYouTubeTimeUpdates()
-        }
         .onDisappear {
             NotificationCenter.default.removeObserver(self)
             isUpdatingTime = false
-        }
-        .onRotate { newOrientation in
-            orientation = newOrientation
         }
     }
     
     private var landscapeLayout: some View {
         ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+            
             // YouTube Player
-            if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url),
-               let videoID = Self.getYouTubeVideoID(from: url) {
-                YouTubePlayerView(
-                    videoID: videoID,
-                    webViewStore: webViewStore,
-                    currentVideoTime: $currentVideoTime,
-                    isPlayerReady: .constant(false),
-                    onError: { error in
-                        errorMessage = error
-                        showError = true
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .edgesIgnoringSafeArea(.all)
-                .onTapGesture {
-                    withAnimation {
-                        showTimeControls = false
-                    }
-                }
+            if let youtubePlayerView = youtubeView {
+                youtubePlayerView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .edgesIgnoringSafeArea(.all)
             }
             
-            // Overlay Button
+            // Controls Overlay
             VStack {
                 HStack {
                     Spacer()
@@ -122,14 +114,10 @@ struct TimelineCaptureView: View {
                     }
                 }
                 Spacer()
-            }
-            
-            // Time Control Overlay
-            if showTimeControls {
-                VStack {
+                
+                if showTimeControls {
                     timeControlView
-                        .transition(.move(edge: .top))
-                    Spacer()
+                        .transition(.move(edge: .bottom))
                 }
             }
         }
@@ -137,58 +125,52 @@ struct TimelineCaptureView: View {
     }
     
     private var portraitLayout: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Movie Title
-                Text(movie.title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal)
-                
-                // Video Player
-                if let url = URL(string: movie.posterImage ?? ""), Self.isYouTubeURL(url),
-                   let videoID = Self.getYouTubeVideoID(from: url) {
-                    YouTubePlayerView(
-                        videoID: videoID,
-                        webViewStore: webViewStore,
-                        currentVideoTime: $currentVideoTime,
-                        isPlayerReady: .constant(false),
-                        onError: { error in
-                            errorMessage = error
-                            showError = true
-                        }
-                    )
-                    .frame(height: UIScreen.main.bounds.width * 9/16)
-                    .padding(.horizontal)
-                }
-                
-                // Timeline Section
-                if let timeline = recognizedTimeline {
-                    capturedTimeView(timeline: timeline)
-                }
-                
-                if let error = timelineError {
-                    Text(error)
-                        .foregroundColor(.red)
-                        .font(.callout)
-                        .padding()
-                }
-                
-                if recognizedTimeline != nil {
-                    saveTimelineButton
-                }
-                
-                // Time Control View
-                timeControlView
-                    .padding()
-                
-                // Capture Button
-                captureButton
-                    .padding()
+        VStack {
+            if let youtubePlayerView = youtubeView {
+                youtubePlayerView
+                    .frame(height: 300)
             }
-            .padding(.vertical)
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Movie Title
+                    Text(movie.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal)
+                    
+                    // Timeline Section
+                    if let timeline = recognizedTimeline {
+                        capturedTimeView(timeline: timeline)
+                    }
+                    
+                    if let error = timelineError {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.callout)
+                            .padding()
+                    }
+                    
+                    if recognizedTimeline != nil {
+                        saveTimelineButton
+                    }
+                    
+                    // Time Control View
+                    timeControlView
+                        .padding()
+                    
+                    // Capture Button
+                    captureButton
+                        .padding()
+                    
+                    Spacer()
+                }
+                .padding()
+            }
         }
-        .navigationBarHidden(false)
+        .navigationBarItems(
+            leading: closeButton
+        )
     }
     
     // MARK: - UI Components
@@ -260,6 +242,10 @@ struct TimelineCaptureView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.black.opacity(0.7))
+                    )
             }
             
             // Time Control Buttons
@@ -301,14 +287,25 @@ struct TimelineCaptureView: View {
                     color: .white
                 )
             }
-            .padding(.horizontal)
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.black.opacity(0.7))
         )
-        .padding(.horizontal)
+    }
+    
+    private func formatVideoTime(_ time: TimeInterval) -> String {
+        let hours = Int(time) / 3600
+        let minutes = Int(time) / 60 % 60
+        let seconds = Int(time) % 60
+        let tenths = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d.%01d", hours, minutes, seconds, tenths)
+        } else {
+            return String(format: "%02d:%02d.%01d", minutes, seconds, tenths)
+        }
     }
     
     private struct TimeControlButton: View {
@@ -407,6 +404,15 @@ struct TimelineCaptureView: View {
         }
     }
     
+    private func seekToTime(webView: WKWebView, time: TimeInterval) {
+        let javascript = "window.seekVideo(\(time));"
+        webView.evaluateJavaScript(javascript) { result, error in
+            if let error = error {
+                Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
+            }
+        }
+    }
+    
     // MARK: - Timeline Handling
     
     private func handleCapturedNumbers(_ numbers: [Int]?) {
@@ -500,6 +506,27 @@ struct TimelineCaptureView: View {
         }
     }
     
+    private func setupYouTubeView() {
+        if youtubeView == nil,
+           let url = URL(string: movie.posterImage ?? ""),
+           Self.isYouTubeURL(url),
+           let videoID = Self.getYouTubeVideoID(from: url) {
+            
+            DispatchQueue.main.async {
+                youtubeView = YouTubePlayerView(
+                    videoID: videoID,
+                    webViewStore: webViewStore,
+                    currentVideoTime: $currentVideoTime,
+                    isPlayerReady: $isPlayerReady,
+                    onError: { error in
+                        errorMessage = error
+                        showError = true
+                    }
+                )
+            }
+        }
+    }
+    
     internal static func isYouTubeURL(_ url: URL) -> Bool {
         guard let host = url.host?.lowercased() else { return false }
         return host.contains("youtube.com") || host.contains("youtu.be")
@@ -546,19 +573,6 @@ struct TimelineCaptureView: View {
         }
         
         return URL(string: formattedString)
-    }
-    
-    private func formatVideoTime(_ time: TimeInterval) -> String {
-        let hours = Int(time) / 3600
-        let minutes = Int(time) / 60 % 60
-        let seconds = Int(time) % 60
-        let tenths = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
-        
-        if hours > 0 {
-            return String(format: "%02d:%02d:%02d.%01d", hours, minutes, seconds, tenths)
-        } else {
-            return String(format: "%02d:%02d.%01d", minutes, seconds, tenths)
-        }
     }
     
     private func setupYouTubeTimeUpdates() {

@@ -23,6 +23,7 @@ struct YouTubePlayerHTML {
                 let isPlayerReady = false;
                 let currentTime = 0;
                 let timeUpdateInterval = null;
+                let pendingSeek = null;
                 
                 function onYouTubeIframeAPIReady() {
                     console.log('YouTube API Ready');
@@ -52,6 +53,12 @@ struct YouTubePlayerHTML {
                     window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                         'event': 'ready'
                     }));
+                    
+                    // Handle any pending seek operation
+                    if (pendingSeek !== null) {
+                        seekVideo(pendingSeek);
+                        pendingSeek = null;
+                    }
                 }
                 
                 function startTimeUpdates() {
@@ -71,6 +78,10 @@ struct YouTubePlayerHTML {
                             }));
                         } catch (error) {
                             console.error('Error updating time:', error);
+                            window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                                'event': 'error',
+                                'error': 'Time update error: ' + error.message
+                            }));
                         }
                     }
                 }
@@ -116,11 +127,8 @@ struct YouTubePlayerHTML {
                 window.seekVideo = function(seconds) {
                     console.log('Seeking to:', seconds);
                     if (!player || !isPlayerReady) {
-                        console.error('Player not ready');
-                        window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
-                            'event': 'error',
-                            'error': 'Player not ready'
-                        }));
+                        console.log('Player not ready, storing seek time');
+                        pendingSeek = seconds;
                         return;
                     }
                     
@@ -131,8 +139,6 @@ struct YouTubePlayerHTML {
                         if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
                             player.playVideo();
                         }
-                        
-                        currentTime = targetTime;
                         
                         window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
                             'event': 'seeked',
