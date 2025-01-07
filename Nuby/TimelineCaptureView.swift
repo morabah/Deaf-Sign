@@ -322,7 +322,7 @@ struct TimelineCaptureView: View {
         @State private var timer: Timer? = nil
         
         var body: some View {
-            Button(action: {}) {
+            Button(action: action) {
                 VStack(spacing: 4) {
                     Image(systemName: symbol)
                         .resizable()
@@ -349,14 +349,6 @@ struct TimelineCaptureView: View {
                     .onEnded { _ in
                         isLongPressing = false
                         stopRepeatingAction()
-                    }
-            )
-            .gesture(
-                TapGesture()
-                    .onEnded {
-                        if !isLongPressing {
-                            action()
-                        }
                     }
             )
         }
