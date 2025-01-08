@@ -12,7 +12,12 @@ struct YouTubePlayerHTML {
             "modestbranding": 1,
             "fs": 1,
             "autoplay": 0,
-            "showinfo": 1
+            "showinfo": 1,
+            // Add performance optimization parameters
+            "iv_load_policy": 3, // Disable video annotations
+            "cc_load_policy": 0, // Disable closed captions by default
+            "hl": Locale.current.languageCode ?? "en", // Set player language
+            "widget_referrer": "file://", // Set referrer for analytics
         ]
         
         // Merge default and custom player vars
@@ -26,13 +31,19 @@ struct YouTubePlayerHTML {
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
-                body { margin: 0; background-color: transparent; }
+                body { 
+                    margin: 0; 
+                    background-color: black; 
+                    overflow: hidden; 
+                }
                 .container { 
                     position: relative; 
-                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+                    padding-bottom: 56.25%; 
                     height: 0; 
                     overflow: hidden; 
-                    transition: all 0.3s ease;
+                    background-color: black;
+                    transform: translate3d(0,0,0); /* Enable hardware acceleration */
+                    will-change: transform; /* Optimize for animations */
                 }
                 #player { 
                     position: absolute; 
@@ -40,7 +51,8 @@ struct YouTubePlayerHTML {
                     left: 0; 
                     width: 100%; 
                     height: 100%; 
-                    transition: all 0.3s ease;
+                    transform: translate3d(0,0,0);
+                    will-change: transform;
                 }
             </style>
         </head>
@@ -48,8 +60,27 @@ struct YouTubePlayerHTML {
             <div class="container">
                 <div id="player"></div>
             </div>
-            <script src="https://www.youtube.com/iframe_api"></script>
             <script>
+                // Performance optimization: Use passive event listeners
+                const supportsPassive = (() => {
+                    let supported = false;
+                    try {
+                        const opts = Object.defineProperty({}, 'passive', {
+                            get: function() { supported = true; }
+                        });
+                        window.addEventListener('test', null, opts);
+                    } catch (e) {}
+                    return supported;
+                })();
+                
+                const eventListenerOpts = supportsPassive ? { passive: true } : false;
+                
+                // Preload YouTube IFrame API
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                const firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                
                 let player;
                 let isPlayerReady = false;
                 let currentTime = 0;
@@ -57,10 +88,14 @@ struct YouTubePlayerHTML {
                 let pendingSeek = null;
                 let pendingPlaybackRate = null;
                 let pendingPlaybackQuality = null;
+                let lastTimeUpdate = 0;
+                const TIME_UPDATE_INTERVAL = 100; // ms
                 
                 function onYouTubeIframeAPIReady() {
                     console.log('YouTube API Ready');
                     const playerVars = \(playerVarsJSON);
+                    
+                    // Create player with optimized settings
                     player = new YT.Player('player', {
                         videoId: '\(videoID)',
                         playerVars: playerVars,
@@ -74,10 +109,49 @@ struct YouTubePlayerHTML {
                     });
                 }
                 
+                function startTimeUpdates() {
+                    stopTimeUpdates();
+                    timeUpdateInterval = setInterval(updateCurrentTime, TIME_UPDATE_INTERVAL);
+                }
+                
+                function updateCurrentTime() {
+                    if (!player || !isPlayerReady) return;
+                    
+                    const now = performance.now();
+                    if (now - lastTimeUpdate < TIME_UPDATE_INTERVAL) return;
+                    
+                    try {
+                        currentTime = player.getCurrentTime();
+                        const duration = player.getDuration();
+                        const loadedFraction = player.getVideoLoadedFraction();
+                        
+                        sendMessage({
+                            'event': 'timeUpdate',
+                            'time': currentTime,
+                            'duration': duration,
+                            'loadedFraction': loadedFraction
+                        });
+                        
+                        lastTimeUpdate = now;
+                    } catch (error) {
+                        console.error('Error updating time:', error);
+                        sendMessage({
+                            'event': 'error',
+                            'error': 'Time update error: ' + error.message
+                        });
+                    }
+                }
+                
+                function stopTimeUpdates() {
+                    if (timeUpdateInterval) {
+                        clearInterval(timeUpdateInterval);
+                        timeUpdateInterval = null;
+                    }
+                }
+                
                 function onPlayerReady(event) {
                     console.log('Player Ready');
                     isPlayerReady = true;
-                    startTimeUpdates();
                     
                     // Handle any pending operations
                     if (pendingSeek !== null) {
@@ -93,11 +167,28 @@ struct YouTubePlayerHTML {
                         pendingPlaybackQuality = null;
                     }
                     
-                    // Send ready event
+                    // Start updates only if video is playing
+                    if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                        startTimeUpdates();
+                    }
+                    
                     sendMessage({
                         'event': 'ready',
                         'availablePlaybackRates': player.getAvailablePlaybackRates(),
                         'availableQualityLevels': player.getAvailableQualityLevels()
+                    });
+                }
+                
+                function onPlayerStateChange(event) {
+                    if (event.data === YT.PlayerState.PLAYING) {
+                        startTimeUpdates();
+                    } else {
+                        stopTimeUpdates();
+                    }
+                    
+                    sendMessage({
+                        'event': 'stateChange',
+                        'state': event.data
                     });
                 }
                 
@@ -112,53 +203,6 @@ struct YouTubePlayerHTML {
                     sendMessage({
                         'event': 'playbackRateChange',
                         'rate': event.data
-                    });
-                }
-                
-                function startTimeUpdates() {
-                    if (timeUpdateInterval) {
-                        clearInterval(timeUpdateInterval);
-                    }
-                    timeUpdateInterval = setInterval(updateCurrentTime, 100);
-                }
-                
-                function updateCurrentTime() {
-                    if (player && player.getCurrentTime && isPlayerReady) {
-                        try {
-                            currentTime = player.getCurrentTime();
-                            sendMessage({
-                                'event': 'timeUpdate',
-                                'time': currentTime,
-                                'duration': player.getDuration(),
-                                'loadedFraction': player.getVideoLoadedFraction()
-                            });
-                        } catch (error) {
-                            console.error('Error updating time:', error);
-                            sendMessage({
-                                'event': 'error',
-                                'error': 'Time update error: ' + error.message
-                            });
-                        }
-                    }
-                }
-                
-                function stopTimeUpdates() {
-                    if (timeUpdateInterval) {
-                        clearInterval(timeUpdateInterval);
-                        timeUpdateInterval = null;
-                    }
-                }
-                
-                function onPlayerStateChange(event) {
-                    console.log('Player State Changed:', event.data);
-                    if (event.data === YT.PlayerState.PLAYING) {
-                        startTimeUpdates();
-                    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                        stopTimeUpdates();
-                    }
-                    sendMessage({
-                        'event': 'stateChange',
-                        'state': event.data
                     });
                 }
                 
@@ -178,10 +222,6 @@ struct YouTubePlayerHTML {
                         'event': 'error',
                         'error': errorMessage
                     });
-                }
-                
-                function sendMessage(message) {
-                    window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify(message));
                 }
                 
                 // Expose seekVideo function for backward compatibility
@@ -214,27 +254,51 @@ struct YouTubePlayerHTML {
                     }
                 };
                 
-                // Handle orientation changes
-                function handleOrientationChange() {
-                    const container = document.querySelector('.container');
-                    const playerElement = document.getElementById('player');
-                    if (window.orientation === 90 || window.orientation === -90) {
-                        container.style.paddingBottom = '0';
-                        container.style.height = '100vh';
-                        playerElement.style.width = '100vw';
-                        playerElement.style.height = '100vh';
-                    } else {
-                        container.style.paddingBottom = '56.25%';
-                        container.style.height = '0';
-                        playerElement.style.width = '100%';
-                        playerElement.style.height = '100%';
+                // Optimized message sending
+                const messageQueue = [];
+                let isProcessingQueue = false;
+                
+                function sendMessage(message) {
+                    messageQueue.push(message);
+                    if (!isProcessingQueue) {
+                        processMessageQueue();
                     }
                 }
                 
-                window.addEventListener('orientationchange', handleOrientationChange);
-                window.addEventListener('resize', handleOrientationChange);
+                function processMessageQueue() {
+                    if (messageQueue.length === 0) {
+                        isProcessingQueue = false;
+                        return;
+                    }
+                    
+                    isProcessingQueue = true;
+                    const message = messageQueue.shift();
+                    window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify(message));
+                    
+                    // Process next message in next frame
+                    requestAnimationFrame(processMessageQueue);
+                }
                 
-                // Global error handling
+                // Optimized event handling
+                window.addEventListener('orientationchange', handleOrientationChange, eventListenerOpts);
+                window.addEventListener('resize', handleOrientationChange, eventListenerOpts);
+                
+                function handleOrientationChange() {
+                    requestAnimationFrame(() => {
+                        const container = document.querySelector('.container');
+                        const playerElement = document.getElementById('player');
+                        
+                        if (window.orientation === 90 || window.orientation === -90) {
+                            container.style.cssText = 'padding-bottom: 0; height: 100vh;';
+                            playerElement.style.cssText = 'width: 100vw; height: 100vh;';
+                        } else {
+                            container.style.cssText = 'padding-bottom: 56.25%; height: 0;';
+                            playerElement.style.cssText = 'width: 100%; height: 100%;';
+                        }
+                    });
+                }
+                
+                // Error handling
                 window.onerror = function(message, source, lineno, colno, error) {
                     console.error('JavaScript error:', message);
                     sendMessage({

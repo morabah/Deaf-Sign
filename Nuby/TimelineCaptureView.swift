@@ -25,7 +25,8 @@ struct TimelineCaptureView: View {
     @State private var isLandscape = false
     @State private var captureStartTime: TimeInterval = 0
     @State private var processingTimer: Timer?
-    
+    @State private var pendingSeek: TimeInterval?
+
     private let movieId: UUID
     private let originalMovie: Movie
     private let updateInterval: TimeInterval = 0.1 // 100ms update interval
@@ -64,7 +65,7 @@ struct TimelineCaptureView: View {
             // After orientation change, restore the time
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if let webView = webViewStore.webView {
-                    seekToTime(webView: webView, time: lastKnownTime)
+                    seekToTime(webView, time: lastKnownTime)
                 }
             }
         }
@@ -455,46 +456,48 @@ struct TimelineCaptureView: View {
     private func seekToVideoTime(_ targetTime: TimeInterval) {
         guard let webView = webViewStore.webView else { return }
         
-        let javascript = "window.seekVideo(\(targetTime));"
-        
-        DispatchQueue.main.async {
-            webView.evaluateJavaScript(javascript) { result, error in
-                if let error = error {
-                    Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                    self.errorMessage = "Failed to seek video: \(error.localizedDescription)"
-                    self.showError = true
-                }
-            }
-        }
+        seekToTime(webView, time: targetTime)
     }
     
-    private func seekToTime(webView: WKWebView, time: TimeInterval) {
-        // Ensure we're using a clean number format for JavaScript
-        let formattedTime = String(format: "%.1f", time)
-        let javascript = "window.seekVideo(\(formattedTime));"
+    private func seekToTime(_ webView: WKWebView, time: TimeInterval) {
+        Logger.log("Seeking to time: \(time)", level: .debug)
+        lastKnownTime = time
+        pendingSeek = time
         
-        Logger.log("Seeking to time: \(formattedTime)", level: .debug)
+        let javascript = """
+            if (window.seekVideo) {
+                window.seekVideo(\(time));
+            } else {
+                if (window.player && typeof window.player.seekTo === 'function') {
+                    window.player.seekTo(\(time), true);
+                } else {
+                    console.error('Player or seekTo not available');
+                }
+            }
+        """
         
         webView.evaluateJavaScript(javascript) { result, error in
             if let error = error {
                 Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                
-                // Retry once after a short delay if there's an error
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak webView] in
-                    guard let webView = webView else { return }
-                    
-                    // Try alternative seek method
-                    let fallbackJS = "if (player && player.seekTo) { player.seekTo(\(formattedTime), true); }"
-                    webView.evaluateJavaScript(fallbackJS) { result, retryError in
-                        if let retryError = retryError {
-                            Logger.log("Retry seek failed: \(retryError.localizedDescription)", level: .error)
-                        }
-                    }
-                }
-            } else {
-                Logger.log("Successfully initiated seek to \(formattedTime)", level: .debug)
+                self.handleSeekError(error)
             }
         }
+    }
+    
+    private func handleSeekError(_ error: Error) {
+        // Retry seek after a short delay if player might not be ready
+        if pendingSeek != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                guard let webView = self.webViewStore.webView else { return }
+                if let time = self.pendingSeek {
+                    self.seekToTime(webView, time: time)
+                }
+            }
+        }
+        
+        // Notify about the error
+        self.errorMessage = "Error seeking video: \(error.localizedDescription)"
+        self.showError = true
     }
     
     // MARK: - Timeline Handling

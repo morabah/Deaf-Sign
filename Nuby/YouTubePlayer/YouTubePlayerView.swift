@@ -3,6 +3,7 @@ import WebKit
 import os.log
 
 struct YouTubePlayerView: UIViewRepresentable {
+    // MARK: - Properties
     let videoID: String
     @ObservedObject var webViewStore: WebViewStore
     @Binding var currentVideoTime: TimeInterval
@@ -17,6 +18,7 @@ struct YouTubePlayerView: UIViewRepresentable {
     var height: CGFloat = 300
     var width: CGFloat = .infinity
     
+    // MARK: - Initialization
     init(videoID: String,
          webViewStore: WebViewStore,
          currentVideoTime: Binding<TimeInterval>,
@@ -41,15 +43,31 @@ struct YouTubePlayerView: UIViewRepresentable {
         self.onError = onError
     }
     
+    // MARK: - UIViewRepresentable
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
     }
     
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.preferences.javaScriptEnabled = true
+        
+        // Add content controller
+        let contentController = WKUserContentController()
+        contentController.add(context.coordinator, name: "youtubePlayer")
+        configuration.userContentController = contentController
+        
+        // Create and configure WebView
         let webView = webViewStore.createWebView(with: configuration, coordinator: context.coordinator)
         webView.navigationDelegate = context.coordinator
+        webView.scrollView.isScrollEnabled = false
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
         
+        // Load player
         loadYouTubePlayer(webView)
         return webView
     }
@@ -60,11 +78,6 @@ struct YouTubePlayerView: UIViewRepresentable {
             context.coordinator.currentVideoID = videoID
             loadYouTubePlayer(webView)
         }
-        
-        // Update player configuration if needed
-        if context.coordinator.lastKnownPlaybackRate != playbackRate {
-            context.coordinator.setPlaybackRate(webView, rate: playbackRate)
-        }
     }
     
     private func loadYouTubePlayer(_ webView: WKWebView) {
@@ -72,13 +85,13 @@ struct YouTubePlayerView: UIViewRepresentable {
         webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
     }
     
+    // MARK: - Coordinator
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: YouTubePlayerView
-        var timeUpdateTimer: Timer?
+        var currentVideoID: String
         var lastKnownTime: TimeInterval = 0
         var lastKnownPlaybackRate: Double = 1.0
         var pendingSeek: TimeInterval?
-        var currentVideoID: String
         var isInitialLoad = true
         
         init(parent: YouTubePlayerView) {
@@ -87,68 +100,95 @@ struct YouTubePlayerView: UIViewRepresentable {
             super.init()
         }
         
-        // YouTube Player Functions
-        func playVideo(_ webView: WKWebView) {
+        // MARK: - WKNavigationDelegate
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Logger.log("WebView finished loading", level: .debug)
+        }
+        
+        // MARK: - WKScriptMessageHandler
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard let messageString = message.body as? String,
+                  let data = messageString.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                  let event = json["event"] as? String else {
+                return
+            }
+            
+            DispatchQueue.main.async { [weak self] in
+                switch event {
+                case "ready":
+                    self?.handleReadyEvent(json)
+                case "stateChange":
+                    self?.handleStateChangeEvent(json)
+                case "timeUpdate":
+                    self?.handleTimeUpdateEvent(json)
+                case "playbackQualityChange":
+                    self?.handleQualityChangeEvent(json)
+                case "playbackRateChange":
+                    self?.handleRateChangeEvent(json)
+                case "error":
+                    self?.handleErrorEvent(json)
+                default:
+                    break
+                }
+            }
+        }
+        
+        // MARK: - Event Handlers
+        private func handleReadyEvent(_ json: [String: Any]) {
+            parent.isPlayerReady = true
+        }
+        
+        private func handleStateChangeEvent(_ json: [String: Any]) {
+            if let state = json["state"] as? Int {
+                parent.playerState = state
+            }
+        }
+        
+        private func handleTimeUpdateEvent(_ json: [String: Any]) {
+            if let time = json["time"] as? TimeInterval {
+                lastKnownTime = time
+                parent.currentVideoTime = time
+            }
+        }
+        
+        private func handleQualityChangeEvent(_ json: [String: Any]) {
+            if let quality = json["quality"] as? String {
+                parent.playbackQuality = quality
+            }
+        }
+        
+        private func handleRateChangeEvent(_ json: [String: Any]) {
+            if let rate = json["rate"] as? Double {
+                parent.playbackRate = rate
+            }
+        }
+        
+        private func handleErrorEvent(_ json: [String: Any]) {
+            if let error = json["error"] as? String {
+                parent.onError(error)
+            }
+        }
+        
+        // MARK: - Player Controls
+        func play(_ webView: WKWebView) {
             evaluatePlayerCommand(webView, command: "playVideo()")
         }
         
-        func pauseVideo(_ webView: WKWebView) {
+        func pause(_ webView: WKWebView) {
             evaluatePlayerCommand(webView, command: "pauseVideo()")
         }
         
-        func stopVideo(_ webView: WKWebView) {
+        func stop(_ webView: WKWebView) {
             evaluatePlayerCommand(webView, command: "stopVideo()")
         }
         
-        func seekTo(_ webView: WKWebView, seconds: TimeInterval, allowSeekAhead: Bool = true) {
-            evaluatePlayerCommand(webView, command: "seekTo(\(seconds), \(allowSeekAhead))")
-        }
-        
-        func loadVideoById(_ webView: WKWebView, videoId: String, startSeconds: TimeInterval? = nil) {
-            var command = "loadVideoById('\(videoId)'"
-            if let startSeconds = startSeconds {
-                command += ", \(startSeconds)"
-            }
-            command += ")"
-            evaluatePlayerCommand(webView, command: command)
-        }
-        
-        func cueVideoById(_ webView: WKWebView, videoId: String, startSeconds: TimeInterval? = nil) {
-            var command = "cueVideoById('\(videoId)'"
-            if let startSeconds = startSeconds {
-                command += ", \(startSeconds)"
-            }
-            command += ")"
-            evaluatePlayerCommand(webView, command: command)
+        func seek(_ webView: WKWebView, to seconds: TimeInterval) {
+            evaluatePlayerCommand(webView, command: "seekTo(\(seconds), true)")
         }
         
         func setPlaybackRate(_ webView: WKWebView, rate: Double) {
             evaluatePlayerCommand(webView, command: "setPlaybackRate(\(rate))")
-            lastKnownPlaybackRate = rate
-        }
-        
-        func getAvailablePlaybackRates(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "getAvailablePlaybackRates()")
-        }
-        
-        func setSize(_ webView: WKWebView, width: Int, height: Int) {
-            evaluatePlayerCommand(webView, command: "setSize(\(width), \(height))")
-        }
-        
-        func getVideoLoadedFraction(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "getVideoLoadedFraction()")
-        }
-        
-        func getPlayerState(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "getPlayerState()")
-        }
-        
-        func getCurrentTime(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "getCurrentTime()")
-        }
-        
-        func getDuration(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "getDuration()")
         }
         
         private func evaluatePlayerCommand(_ webView: WKWebView, command: String) {
@@ -158,96 +198,6 @@ struct YouTubePlayerView: UIViewRepresentable {
                     self?.parent.onError("Error executing \(command): \(error.localizedDescription)")
                 }
             }
-        }
-        
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Logger.log("WebView finished loading", level: .debug)
-            
-            // Only seek on subsequent loads, not the initial load
-            if !isInitialLoad {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    if self.lastKnownTime > 0 {
-                        self.seekToTime(webView, time: self.lastKnownTime)
-                    }
-                }
-            }
-            isInitialLoad = false
-        }
-        
-        private func seekToTime(_ webView: WKWebView, time: TimeInterval) {
-            lastKnownTime = time
-            pendingSeek = time
-            
-            let javascript = "window.seekVideo(\(time));"
-            webView.evaluateJavaScript(javascript) { [weak self] result, error in
-                if let error = error {
-                    Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                    self?.parent.onError("Error seeking video: \(error.localizedDescription)")
-                }
-            }
-        }
-        
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard let messageString = message.body as? String,
-                  let data = messageString.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-                return
-            }
-            
-            guard let event = json["event"] as? String else { return }
-            
-            DispatchQueue.main.async { [weak self] in
-                switch event {
-                case "ready":
-                    self?.parent.isPlayerReady = true
-                case "stateChange":
-                    if let state = json["state"] as? Int {
-                        self?.parent.playerState = state
-                    }
-                case "timeUpdate":
-                    if let time = json["time"] as? TimeInterval {
-                        self?.lastKnownTime = time
-                        self?.parent.currentVideoTime = time
-                    }
-                case "playbackQualityChange":
-                    if let quality = json["quality"] as? String {
-                        self?.parent.playbackQuality = quality
-                    }
-                case "playbackRateChange":
-                    if let rate = json["rate"] as? Double {
-                        self?.parent.playbackRate = rate
-                    }
-                case "error":
-                    if let error = json["error"] as? String {
-                        self?.parent.onError(error)
-                    }
-                default:
-                    break
-                }
-            }
-        }
-        
-        func startTimeUpdates(_ webView: WKWebView) {
-            timeUpdateTimer?.invalidate()
-            timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-                self?.updateCurrentTime(webView)
-            }
-        }
-        
-        private func updateCurrentTime(_ webView: WKWebView) {
-            let javascript = "player.getCurrentTime();"
-            webView.evaluateJavaScript(javascript) { [weak self] result, error in
-                if let time = result as? Double {
-                    DispatchQueue.main.async {
-                        self?.parent.currentVideoTime = time
-                        self?.lastKnownTime = time
-                    }
-                }
-            }
-        }
-        
-        deinit {
-            timeUpdateTimer?.invalidate()
         }
     }
 }
