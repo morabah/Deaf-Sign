@@ -302,8 +302,19 @@ class MovieDatabase: ObservableObject {
         if query.isEmpty {
             return movies
         }
+        
+        // Clean and prepare the search query
+        let searchQuery = query.trimmingCharacters(in: .whitespaces).lowercased()
+        
+        // Filter movies by exact title match only
         return movies.filter { movie in
-            movie.title.localizedCaseInsensitiveContains(query)
+            // Only check the title field, converted to lowercase
+            let titleWords = movie.title.lowercased().split(separator: " ")
+            
+            // Check if any title word starts with the search query
+            return titleWords.contains { word in
+                word.hasPrefix(searchQuery)
+            }
         }
     }
     

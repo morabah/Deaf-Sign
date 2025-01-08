@@ -145,12 +145,18 @@ class MovieManager: ObservableObject {
             return
         }
         
-        // Perform search on background thread
+        // Perform search on background thread - strict title matching only
         let results = await Task.detached(priority: .userInitiated) { [movies] in
-            movies.filter { movie in
-                movie.title.localizedCaseInsensitiveContains(query) ||
-                movie.cinema.name.localizedCaseInsensitiveContains(query) ||
-                movie.cinema.location.localizedCaseInsensitiveContains(query)
+            let searchQuery = query.trimmingCharacters(in: .whitespaces).lowercased()
+            
+            return movies.filter { movie in
+                // Only check the title field
+                let titleWords = movie.title.lowercased().split(separator: " ")
+                
+                // Check if any title word starts with the search query
+                return titleWords.contains { word in
+                    word.hasPrefix(searchQuery)
+                }
             }
         }.value
         
