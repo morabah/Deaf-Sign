@@ -3,15 +3,19 @@ import WebKit
 import os.log
 
 struct TimelineCaptureView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var movieDatabase: MovieDatabase
     @StateObject private var webViewStore = WebViewStore()
     @State private var currentVideoTime: TimeInterval = 0
-    @State private var lastKnownTime: TimeInterval = 0
-    @State private var isPlayerReady: Bool = false
-    @State private var showTimeControls = false
+    @State private var isPlayerReady = false
+    @State private var playerState = 0
+    @State private var playbackQuality = "default"
+    @State private var playbackRate = 1.0
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var isFullscreen = false
+    @State private var pendingSeek: TimeInterval?
+    @State private var showTimeControls = false
     @State private var orientation = UIDevice.current.orientation
     @State private var youtubeView: YouTubePlayerView?
     @State private var showingCamera = false
@@ -25,17 +29,39 @@ struct TimelineCaptureView: View {
     @State private var isLandscape = false
     @State private var captureStartTime: TimeInterval = 0
     @State private var processingTimer: Timer?
-    @State private var pendingSeek: TimeInterval?
-
+    @State private var lastKnownTime: TimeInterval = 0
+    
     private let movieId: UUID
     private let originalMovie: Movie
     private let updateInterval: TimeInterval = 0.1 // 100ms update interval
-    private let minSeekStep: Double = 0.1 // Minimum seek step (100ms)
+    private let minSeekStep: TimeInterval = 0.1
     private let youtubeStartLatency: TimeInterval = 0.5 // 500ms YouTube player start latency
     private let networkLatency: TimeInterval = 0.1 // 100ms network latency
     
-    private var movie: Movie {
-        movieDatabase.movies.first { $0.id == movieId } ?? originalMovie
+    // Computed property to get video ID from movie source
+    private var videoID: String? {
+        guard let posterURL = originalMovie.posterImage else {
+            Logger.log("No poster URL found", level: .error)
+            return nil
+        }
+        
+        guard let url = URL(string: posterURL) else {
+            Logger.log("Invalid URL format: \(posterURL)", level: .error)
+            return nil
+        }
+        
+        guard YouTubeURLUtility.isYouTubeURL(url) else {
+            Logger.log("Not a YouTube URL: \(url)", level: .error)
+            return nil
+        }
+        
+        guard let videoID = YouTubeURLUtility.getYouTubeVideoID(from: url) else {
+            Logger.log("Could not extract video ID from URL: \(url)", level: .error)
+            return nil
+        }
+        
+        Logger.log("Successfully extracted video ID: \(videoID)", level: .debug)
+        return videoID
     }
     
     init(movie: Movie) {
@@ -45,159 +71,49 @@ struct TimelineCaptureView: View {
     }
     
     var body: some View {
-        Group {
-            if orientation.isLandscape {
-                landscapeLayout
-            } else {
-                portraitLayout
-            }
-        }
-        .onAppear {
-            setupYouTubeView()
-            setupOrientationChangeNotification()
-            setupYouTubeTimeUpdates()
-        }
-        .onRotate { newOrientation in
-            // Store the current time before orientation change
-            lastKnownTime = currentVideoTime
-            orientation = newOrientation
-            
-            // After orientation change, restore the time
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if let webView = webViewStore.webView {
-                    seekToTime(webView, time: lastKnownTime)
-                }
-            }
-        }
-        .alert(isPresented: $showError) {
-            Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
-        }
-        .navigationBarTitle("", displayMode: .inline)
-        .navigationBarItems(trailing: closeButton)
-        .sheet(isPresented: $showingCamera) {
-            CameraView(movie: movie) { numbers in
-                handleCapturedNumbers(numbers)
-            }
-        }
-        .onChange(of: capturedNumbers) { oldValue, newValue in
-            if let numbers = newValue {
-                handleCapturedNumbers(numbers)
-            }
-        }
-        .onDisappear {
-            NotificationCenter.default.removeObserver(self)
-            isUpdatingTime = false
-        }
-    }
-    
-    private var landscapeLayout: some View {
-        ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
-            
-            // YouTube Player
-            if let youtubePlayerView = youtubeView {
-                youtubePlayerView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .edgesIgnoringSafeArea(.all)
-            }
-            
-            // Controls Overlay
-            VStack {
-                HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 8) {
-                        HStack {
-                            if showTimeControls {
-                                Text(formatVideoTime(currentVideoTime))
-                                    .font(.system(size: 32, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color.black.opacity(0.7))
-                                    )
-                            }
-                            Button(action: {
-                                withAnimation {
-                                    showTimeControls.toggle()
-                                }
-                            }) {
-                                Image(systemName: "clock.circle.fill")
-                                    .resizable()
-                                    .frame(width: 44, height: 44)
-                                    .foregroundColor(.white)
-                                    .background(Circle().fill(Color.black.opacity(0.5)))
-                                    .padding()
-                            }
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // YouTube Player
+                if let videoID = videoID {
+                    if let youtubePlayerView = youtubeView {
+                        youtubePlayerView
+                            .frame(height: geometry.size.width * 9/16)
+                            .background(Color.black)
+                    } else {
+                        YouTubePlayerView(
+                            videoID: videoID,
+                            webViewStore: webViewStore,
+                            currentVideoTime: $currentVideoTime,
+                            isPlayerReady: $isPlayerReady,
+                            playerState: $playerState,
+                            playbackQuality: $playbackQuality,
+                            playbackRate: $playbackRate,
+                            playerVars: [
+                                "playsinline": 1,
+                                "controls": 1,
+                                "rel": 0,
+                                "fs": 1,
+                                "modestbranding": 1,
+                                "enablejsapi": 1
+                            ]
+                        ) { error in
+                            errorMessage = error
+                            showError = true
                         }
-                        
-                        if showTimeControls {
-                            // Time Control Buttons
-                            HStack(spacing: 24) {
-                                // Decrease Time Button
-                                TimeControlButton(
-                                    action: { seekRelativeTime(-1.0) },
-                                    symbol: "minus.circle.fill",
-                                    size: 44,
-                                    color: .white
-                                )
-                                
-                                // Fine Control Buttons
-                                VStack(spacing: 8) {
-                                    // Fine Increase Button (+0.1s)
-                                    TimeControlButton(
-                                        action: { seekRelativeTime(minSeekStep) },
-                                        symbol: "plus.circle",
-                                        size: 32,
-                                        color: .white,
-                                        label: "+0.1s"
-                                    )
-                                    
-                                    // Fine Decrease Button (-0.1s)
-                                    TimeControlButton(
-                                        action: { seekRelativeTime(-minSeekStep) },
-                                        symbol: "minus.circle",
-                                        size: 32,
-                                        color: .white,
-                                        label: "-0.1s"
-                                    )
-                                }
-                                
-                                // Increase Time Button
-                                TimeControlButton(
-                                    action: { seekRelativeTime(1.0) },
-                                    symbol: "plus.circle.fill",
-                                    size: 44,
-                                    color: .white
-                                )
-                            }
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.black.opacity(0.7))
-                            )
-                            .transition(.move(edge: .trailing))
-                        }
+                        .frame(height: geometry.size.width * 9/16)
+                        .background(Color.black)
                     }
+                } else {
+                    Text("Invalid YouTube URL")
+                        .foregroundColor(.red)
+                        .frame(height: geometry.size.width * 9/16)
+                        .background(Color.black)
                 }
-                Spacer()
-            }
-        }
-        .navigationBarHidden(true)
-    }
-    
-    private var portraitLayout: some View {
-        VStack {
-            if let youtubePlayerView = youtubeView {
-                youtubePlayerView
-                    .frame(height: 300)
-            }
-            
-            ScrollView {
-                VStack(spacing: 20) {
+                
+                // Timeline and controls
+                VStack {
                     // Movie Title
-                    Text(movie.title)
+                    Text(originalMovie.title)
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.horizontal)
@@ -231,16 +147,39 @@ struct TimelineCaptureView: View {
                 .padding()
             }
         }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
         .navigationBarItems(
             leading: closeButton
         )
+        .onAppear {
+            setupYouTubeView()
+            setupOrientationChangeNotification()
+        }
+        .onDisappear {
+            NotificationCenter.default.removeObserver(self)
+            isUpdatingTime = false
+        }
+        .sheet(isPresented: $showingCamera) {
+            CameraView(movie: originalMovie) { numbers in
+                handleCapturedNumbers(numbers)
+            }
+        }
+        .onChange(of: capturedNumbers) { oldValue, newValue in
+            if let numbers = newValue {
+                handleCapturedNumbers(numbers)
+            }
+        }
     }
     
     // MARK: - UI Components
     
     private var closeButton: some View {
         Button(action: {
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
         }) {
             Image(systemName: "xmark.circle.fill")
                 .foregroundColor(.gray)
@@ -250,7 +189,7 @@ struct TimelineCaptureView: View {
     
     private var captureButton: some View {
         Button(action: {
-            Logger.log("Opening camera for movie: \(movie.title)", level: .debug)
+            Logger.log("Opening camera for movie: \(originalMovie.title)", level: .debug)
             // Start timing when capture button is pressed
             captureStartTime = CACurrentMediaTime()
             showingCamera = true
@@ -358,105 +297,35 @@ struct TimelineCaptureView: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.black.opacity(0.7))
         )
+        .onChange(of: currentVideoTime) { oldValue, newValue in
+            // Update UI when time changes
+            if !isUpdatingTime {
+                lastKnownTime = newValue
+            }
+        }
     }
     
     private func formatVideoTime(_ time: TimeInterval) -> String {
         let hours = Int(time) / 3600
         let minutes = Int(time) / 60 % 60
         let seconds = Int(time) % 60
-        let tenths = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
+        let milliseconds = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
         
         if hours > 0 {
-            return String(format: "%02d:%02d:%02d.%01d", hours, minutes, seconds, tenths)
+            return String(format: "%02d:%02d:%02d.%01d", hours, minutes, seconds, milliseconds)
         } else {
-            return String(format: "%02d:%02d.%01d", minutes, seconds, tenths)
-        }
-    }
-    
-    private struct TimeControlButton: View {
-        let action: () -> Void
-        let symbol: String
-        let size: CGFloat
-        let color: Color
-        var label: String? = nil
-        
-        @State private var isLongPressing = false
-        @State private var timer: Timer? = nil
-        
-        var body: some View {
-            Button(action: action) {
-                VStack(spacing: 4) {
-                    Image(systemName: symbol)
-                        .resizable()
-                        .frame(width: size, height: size)
-                        .foregroundColor(color)
-                    
-                    if let label = label {
-                        Text(label)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .buttonStyle(TimeControlButtonStyle())
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.5)
-                    .onEnded { _ in
-                        isLongPressing = true
-                        startRepeatingAction()
-                    }
-            )
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onEnded { _ in
-                        isLongPressing = false
-                        stopRepeatingAction()
-                    }
-            )
-        }
-        
-        private func startRepeatingAction() {
-            // Initial delay before rapid repeating
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                guard isLongPressing else { return }
-                
-                // Start the timer for continuous updates
-                timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                    guard isLongPressing else {
-                        stopRepeatingAction()
-                        return
-                    }
-                    action()
-                }
-            }
-        }
-        
-        private func stopRepeatingAction() {
-            timer?.invalidate()
-            timer = nil
-        }
-    }
-    
-    private struct TimeControlButtonStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .opacity(configuration.isPressed ? 0.7 : 1.0)
-                .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-                .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+            return String(format: "%02d:%02d.%01d", minutes, seconds, milliseconds)
         }
     }
     
     private func seekRelativeTime(_ offset: TimeInterval) {
         let newTime = max(0, currentVideoTime + offset)
-        // Round to nearest 0.1 second for YouTube compatibility
-        let roundedTime = round(newTime * 10) / 10
-        seekToVideoTime(roundedTime)
+        seekToVideoTime(newTime)
     }
     
-    private func seekToVideoTime(_ targetTime: TimeInterval) {
+    private func seekToVideoTime(_ time: TimeInterval) {
         guard let webView = webViewStore.webView else { return }
-        
-        seekToTime(webView, time: targetTime)
+        seekToTime(webView, time: time)
     }
     
     private func seekToTime(_ webView: WKWebView, time: TimeInterval) {
@@ -479,7 +348,7 @@ struct TimelineCaptureView: View {
         webView.evaluateJavaScript(javascript) { result, error in
             if let error = error {
                 Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
-                self.handleSeekError(error)
+                handleSeekError(error)
             }
         }
     }
@@ -488,16 +357,16 @@ struct TimelineCaptureView: View {
         // Retry seek after a short delay if player might not be ready
         if pendingSeek != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                guard let webView = self.webViewStore.webView else { return }
-                if let time = self.pendingSeek {
-                    self.seekToTime(webView, time: time)
+                guard let webView = webViewStore.webView else { return }
+                if let time = pendingSeek {
+                    seekToTime(webView, time: time)
                 }
             }
         }
         
-        // Notify about the error
-        self.errorMessage = "Error seeking video: \(error.localizedDescription)"
-        self.showError = true
+        // Show error alert
+        errorMessage = "Error seeking video: \(error.localizedDescription)"
+        showError = true
     }
     
     // MARK: - Timeline Handling
@@ -577,6 +446,100 @@ struct TimelineCaptureView: View {
         }
     }
     
+    // MARK: - Orientation Handling
+    
+    private func setupOrientationChangeNotification() {
+        NotificationCenter.default.addObserver(
+            forName: UIDevice.orientationDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [self] _ in
+            let newOrientation = UIDevice.current.orientation
+            handleOrientationChange(newOrientation)
+        }
+    }
+    
+    private func handleOrientationChange(_ newOrientation: UIDeviceOrientation) {
+        // Update orientation state
+        orientation = newOrientation
+        isLandscape = newOrientation.isLandscape
+        
+        // Store current time before orientation change
+        let currentTime = currentVideoTime
+        
+        // Reset player view for new orientation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            setupYouTubeView()
+            
+            // Restore time after player is ready
+            if isPlayerReady {
+                seekToVideoTime(currentTime)
+            } else {
+                // Store the time to seek when player becomes ready
+                pendingSeek = currentTime
+            }
+            
+            // Ensure time updates continue
+            setupYouTubeTimeUpdates()
+        }
+    }
+    
+    private func setupYouTubeTimeUpdates() {
+        guard let webView = webViewStore.webView else { return }
+        
+        // Clear any existing timers
+        processingTimer?.invalidate()
+        processingTimer = nil
+        
+        let javascript = """
+            function updateTime() {
+                if (player && player.getCurrentTime) {
+                    var currentTime = player.getCurrentTime();
+                    window.webkit.messageHandlers.youtubePlayer.postMessage(JSON.stringify({
+                        'event': 'timeUpdate',
+                        'time': currentTime
+                    }));
+                }
+                requestAnimationFrame(updateTime);
+            }
+            updateTime();
+        """
+        
+        webView.evaluateJavaScript(javascript) { result, error in
+            if let error = error {
+                Logger.log("Error setting up time updates: \(error.localizedDescription)", level: .error)
+            }
+        }
+        
+        // Start a new timer for continuous updates
+        processingTimer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { timer in
+            updateCurrentTime()
+        }
+    }
+    
+    private func updateCurrentTime() {
+        guard let webView = webViewStore.webView else { return }
+        
+        let javascript = """
+            if (player && player.getCurrentTime) {
+                player.getCurrentTime();
+            } else {
+                -1;
+            }
+        """
+        
+        webView.evaluateJavaScript(javascript) { result, error in
+            if let time = result as? TimeInterval, time >= 0 {
+                DispatchQueue.main.async {
+                    if !isUpdatingTime {
+                        currentVideoTime = time
+                        lastKnownTime = time
+                    }
+                }
+            }
+        }
+    }
+    
     // MARK: - Other
     
     private func saveTimeline() {
@@ -589,7 +552,7 @@ struct TimelineCaptureView: View {
         Logger.log("Saving timeline: \(timeline)", level: .debug)
         
         // Dismiss the view after saving
-        presentationMode.wrappedValue.dismiss()
+        dismiss()
     }
     
     private func enableScreenRotation() {
@@ -601,19 +564,9 @@ struct TimelineCaptureView: View {
         }
     }
     
-    private func setupOrientationChangeNotification() {
-        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                self.isLandscape = windowScene.interfaceOrientation.isLandscape
-            }
-        }
-    }
-    
     private func setupYouTubeView() {
         if youtubeView == nil,
-           let url = URL(string: movie.posterImage ?? ""),
-           YouTubeURLUtility.isYouTubeURL(url),
-           let videoID = YouTubeURLUtility.getYouTubeVideoID(from: url) {
+           let videoID = videoID {
             
             DispatchQueue.main.async {
                 youtubeView = YouTubePlayerView(
@@ -621,34 +574,57 @@ struct TimelineCaptureView: View {
                     webViewStore: webViewStore,
                     currentVideoTime: $currentVideoTime,
                     isPlayerReady: $isPlayerReady,
-                    onError: { error in
-                        errorMessage = error
-                        showError = true
-                    }
-                )
+                    playerState: $playerState,
+                    playbackQuality: $playbackQuality,
+                    playbackRate: $playbackRate,
+                    playerVars: [
+                        "playsinline": 1,
+                        "controls": 1,
+                        "rel": 0,
+                        "fs": 1,
+                        "modestbranding": 1,
+                        "enablejsapi": 1
+                    ]
+                ) { error in
+                    errorMessage = error
+                    showError = true
+                }
             }
         }
     }
     
-    private static func validateAndFormatURL(_ urlString: String) -> URL? {
-        return YouTubeURLUtility.validateAndFormatURL(urlString)
+    private func onPlayerReady() {
+        setupYouTubeTimeUpdates()
+        
+        // Start with time controls visible
+        showTimeControls = true
+        
+        // Initialize the current time
+        updateCurrentTime()
     }
     
-    private func setupYouTubeTimeUpdates() {
-        guard let webView = webViewStore.webView else { return }
+    private func onPlayerStateChange(_ state: Int) {
+        playerState = state
         
-        let javascript = """
-            function updateTime() {
-                if (player && player.getCurrentTime) {
-                    var currentTime = player.getCurrentTime();
-                    window.webkit.messageHandlers.youtubePlayer.postMessage("time:" + currentTime);
-                }
-                requestAnimationFrame(updateTime);
+        // YouTube Player States:
+        // -1: Unstarted
+        // 0: Ended
+        // 1: Playing
+        // 2: Paused
+        // 3: Buffering
+        // 5: Video cued
+        
+        switch state {
+        case 1: // Playing
+            if let pendingTime = pendingSeek {
+                seekToVideoTime(pendingTime)
+                self.pendingSeek = nil
             }
-            updateTime();
-        """
-        
-        webView.evaluateJavaScript(javascript)
+        case -1, 5: // Unstarted or cued
+            setupYouTubeTimeUpdates()
+        default:
+            break
+        }
     }
 }
 
@@ -668,5 +644,78 @@ struct DeviceRotationViewModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
                 action(UIDevice.current.orientation)
             }
+    }
+}
+
+struct TimeControlButton: View {
+    let action: () -> Void
+    let symbol: String
+    let size: CGFloat
+    let color: Color
+    var label: String? = nil
+    
+    @State private var isLongPressing = false
+    @State private var timer: Timer? = nil
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .resizable()
+                    .frame(width: size, height: size)
+                    .foregroundColor(color)
+                
+                if let label = label {
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .buttonStyle(TimeControlButtonStyle())
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.5)
+                .onEnded { _ in
+                    isLongPressing = true
+                    startRepeatingAction()
+                }
+        )
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onEnded { _ in
+                    isLongPressing = false
+                    stopRepeatingAction()
+                }
+        )
+    }
+    
+    private func startRepeatingAction() {
+        // Initial delay before rapid repeating
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard isLongPressing else { return }
+            
+            // Start the timer for continuous updates
+            timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                guard isLongPressing else {
+                    stopRepeatingAction()
+                    return
+                }
+                action()
+            }
+        }
+    }
+    
+    private func stopRepeatingAction() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+struct TimeControlButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
     }
 }
