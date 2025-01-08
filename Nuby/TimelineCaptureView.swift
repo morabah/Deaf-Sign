@@ -23,11 +23,15 @@ struct TimelineCaptureView: View {
     @State private var totalDelay: TimeInterval?
     @State private var isUpdatingTime = false
     @State private var isLandscape = false
+    @State private var captureStartTime: TimeInterval = 0
+    @State private var processingTimer: Timer?
     
     private let movieId: UUID
     private let originalMovie: Movie
     private let updateInterval: TimeInterval = 0.1 // 100ms update interval
     private let minSeekStep: Double = 0.1 // Minimum seek step (100ms)
+    private let youtubeStartLatency: TimeInterval = 0.5 // 500ms YouTube player start latency
+    private let networkLatency: TimeInterval = 0.1 // 100ms network latency
     
     private var movie: Movie {
         movieDatabase.movies.first { $0.id == movieId } ?? originalMovie
@@ -246,17 +250,19 @@ struct TimelineCaptureView: View {
     private var captureButton: some View {
         Button(action: {
             Logger.log("Opening camera for movie: \(movie.title)", level: .debug)
+            // Start timing when capture button is pressed
+            captureStartTime = CACurrentMediaTime()
             showingCamera = true
         }) {
-            HStack {
-                Image(systemName: "camera.fill")
-                    .imageScale(.large)
+            VStack {
+                Image(systemName: "camera")
+                    .font(.system(size: 24))
                 Text("Capture Timeline")
-                    .fontWeight(.medium)
+                    .font(.headline)
             }
             .foregroundColor(.white)
-            .padding()
             .frame(maxWidth: .infinity)
+            .padding()
             .background(Color.blue)
             .cornerRadius(10)
         }
@@ -463,10 +469,30 @@ struct TimelineCaptureView: View {
     }
     
     private func seekToTime(webView: WKWebView, time: TimeInterval) {
-        let javascript = "window.seekVideo(\(time));"
+        // Ensure we're using a clean number format for JavaScript
+        let formattedTime = String(format: "%.1f", time)
+        let javascript = "window.seekVideo(\(formattedTime));"
+        
+        Logger.log("Seeking to time: \(formattedTime)", level: .debug)
+        
         webView.evaluateJavaScript(javascript) { result, error in
             if let error = error {
                 Logger.log("Error seeking video: \(error.localizedDescription)", level: .error)
+                
+                // Retry once after a short delay if there's an error
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak webView] in
+                    guard let webView = webView else { return }
+                    
+                    // Try alternative seek method
+                    let fallbackJS = "if (player && player.seekTo) { player.seekTo(\(formattedTime), true); }"
+                    webView.evaluateJavaScript(fallbackJS) { result, retryError in
+                        if let retryError = retryError {
+                            Logger.log("Retry seek failed: \(retryError.localizedDescription)", level: .error)
+                        }
+                    }
+                }
+            } else {
+                Logger.log("Successfully initiated seek to \(formattedTime)", level: .debug)
             }
         }
     }
@@ -512,24 +538,40 @@ struct TimelineCaptureView: View {
     }
     
     private func calculateDelayAndSeek(originalSeconds: Int) {
-        // Calculate processing delay
+        // Get current time when we're ready to play
         displayTimestamp = Date()
-        var processingDelay: TimeInterval = 0
         
+        // Calculate the delay between capture and playback readiness
         if let captureTime = captureTimestamp {
-            processingDelay = displayTimestamp?.timeIntervalSince(captureTime) ?? 0
+            // Calculate processing delay (time between capture and now)
+            let processingDelay = displayTimestamp?.timeIntervalSince(captureTime) ?? 0
+            
+            // Add YouTube player initialization delay (empirically measured)
+            let youtubeDelay: TimeInterval = 0.5 // 500ms for player to start playing
+            
+            // Total delay is processing time plus YouTube startup time
+            let totalDelay = processingDelay + youtubeDelay
+            
+            // Round to nearest 0.1 second since that's our seeking precision
+            let roundedDelay = round(totalDelay * 10) / 10
+            self.totalDelay = roundedDelay
+            
+            Logger.log("""
+                Synchronization delay breakdown:
+                - Time shown in external video: \(originalSeconds)s
+                - Processing delay: \(String(format: "%.1f", processingDelay))s
+                - YouTube startup delay: \(String(format: "%.1f", youtubeDelay))s
+                - Total delay: \(String(format: "%.1f", roundedDelay))s
+                - Target playback time: \(originalSeconds + Int(ceil(roundedDelay)))s
+                """, level: .debug)
+            
+            // Add the delay to the captured time to sync with external video
+            let targetSeconds = originalSeconds + Int(ceil(roundedDelay))
+            seekToVideoTime(TimeInterval(targetSeconds))
+        } else {
+            Logger.log("No capture timestamp available", level: .error)
+            timelineError = "Could not calculate synchronization delay"
         }
-        
-        // Ensure minimum delay of 1 second
-        let adjustedDelay = max(processingDelay, 2.5)
-        totalDelay = adjustedDelay
-        
-        // Add delay to the original time
-        let adjustedSeconds = originalSeconds + Int(ceil(adjustedDelay))
-        Logger.log("Original time: \(originalSeconds)s, Delay: \(adjustedDelay)s, Adjusted time: \(adjustedSeconds)s", level: .debug)
-        
-        // Seek to adjusted time
-        seekToVideoTime(TimeInterval(adjustedSeconds))
     }
     
     // MARK: - Other
