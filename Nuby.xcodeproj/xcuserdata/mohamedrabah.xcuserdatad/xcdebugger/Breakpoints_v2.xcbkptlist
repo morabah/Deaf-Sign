@@ -48,8 +48,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "147"
             endingLineNumber = "147"
-            landmarkName = "unknown"
-            landmarkType = "0">
+            landmarkName = "application(_:open:options:)"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

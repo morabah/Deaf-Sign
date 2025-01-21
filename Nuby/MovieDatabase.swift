@@ -119,7 +119,7 @@ class MovieDatabase: ObservableObject {
                 var data = document.data()
                 
                 // Validate required fields
-                guard let title = data["title"] as? String,
+                guard let _ = data["title"] as? String,
                       let sourceRaw = data["source"] as? String,
                       let source = MovieSource(rawValue: sourceRaw) else {
                     Logger.log("Invalid document format: \(document.documentID)", level: .error)

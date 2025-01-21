@@ -2,7 +2,7 @@ import SwiftUI
 import os.log
 import FirebaseCore
 import FirebaseAuth
-
+//note
 struct ContentView: View {
     @EnvironmentObject var movieDatabase: MovieDatabase
     @EnvironmentObject var authManager: AuthenticationManager
@@ -15,6 +15,7 @@ struct ContentView: View {
     @FocusState private var isInputActive: Bool
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var isSignedOut = false
     
     var body: some View {
         NavigationView {
@@ -47,14 +48,31 @@ struct ContentView: View {
                         recentMoviesView
                         
                         Spacer()
+                        
+                        // Sign Out Button
+                        Button(action: handleSignOut) {
+                            Text("Sign Out")
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red.opacity(0.8))
+                                .cornerRadius(10)
+                        }
+                        .padding(.horizontal, 50)
+                        .padding(.bottom, 20)
                     }
                     .padding(.vertical, 20)
                 }
             }
             .navigationBarHidden(true)
+            .fullScreenCover(isPresented: $isSignedOut) {
+                LoginView()
+                    .environmentObject(authManager)
+            }
         }
-        .onChange(of: movieDatabase.error != nil) { hasError in
-            if hasError, let error = movieDatabase.error {
+        .onChange(of: movieDatabase.error != nil, initial: true) { oldValue, newValue in
+            if newValue, let error = movieDatabase.error {
                 alertMessage = error.localizedDescription
                 showingAlert = true
             }
@@ -212,6 +230,22 @@ struct ContentView: View {
             .padding()
             .background(Color.blue.opacity(0.1))
             .cornerRadius(10)
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func handleSignOut() {
+        Logger.log("User attempting to sign out", level: .debug)
+        do {
+            try Auth.auth().signOut()
+            try authManager.signOut()
+            isSignedOut = true
+            Logger.log("User successfully signed out", level: .debug)
+        } catch {
+            Logger.log("Error signing out: \(error.localizedDescription)", level: .error)
+            alertMessage = "Failed to sign out: \(error.localizedDescription)"
+            showingAlert = true
         }
     }
     

@@ -52,7 +52,11 @@ struct YouTubePlayerView: UIViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
-        configuration.preferences.javaScriptEnabled = true
+        
+        // Configure JavaScript using WKWebpagePreferences
+        let preferences = WKWebpagePreferences()
+        preferences.allowsContentJavaScript = true
+        configuration.defaultWebpagePreferences = preferences
         
         // Add content controller
         let contentController = WKUserContentController()

@@ -78,15 +78,18 @@ struct NubyApp: App {
         // Check for existing sign-in
         Task { @MainActor in
             do {
-                if let user = try? await GIDSignIn.sharedInstance.restorePreviousSignIn() {
-                    let credential = GoogleAuthProvider.credential(
-                        withIDToken: user.idToken?.tokenString ?? "",
-                        accessToken: user.accessToken.tokenString
-                    )
-                    
-                    try? await Auth.auth().signIn(with: credential)
+                let user = try await GIDSignIn.sharedInstance.restorePreviousSignIn()
+                let credential = GoogleAuthProvider.credential(
+                    withIDToken: user.idToken?.tokenString ?? "",
+                    accessToken: user.accessToken.tokenString
+                )
+                
+                do {
+                    try await Auth.auth().signIn(with: credential)
                     authManager.isAuthenticated = true
                     Logger.log("Successfully restored Google Sign-In session", level: .info)
+                } catch {
+                    Logger.log("Failed to sign in with credential: \(error.localizedDescription)", level: .error)
                 }
             } catch {
                 Logger.log("Failed to sign in with Google: \(error.localizedDescription)", level: .error)
@@ -115,12 +118,8 @@ struct NubyApp: App {
     }
     
     private func setupFirebase() {
-        do {
-            try FirebaseApp.configure()
-            Logger.log("Firebase configured successfully", level: .info)
-        } catch {
-            Logger.log("Failed to configure Firebase: \(error.localizedDescription)", level: .error)
-        }
+        FirebaseApp.configure()
+        Logger.log("Firebase configured successfully", level: .info)
     }
 }
 class AppDelegate: UIResponder, UIApplicationDelegate {
