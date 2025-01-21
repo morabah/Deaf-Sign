@@ -24,44 +24,44 @@ struct ContentView: View {
                 Color(.systemGroupedBackground)
                     .edgesIgnoringSafeArea(.all)
                 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Top Bar
-                        topBar
-                        
-                        // Search Bar
-                        searchBar
-                        
-                        // Search Results
-                        if !searchText.isEmpty {
-                            searchResultsView
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Top Bar
+                            topBar
+                            
+                            // Search Bar
+                            searchBar
+                            
+                            // Search Results
+                            if !searchText.isEmpty {
+                                searchResultsView
+                            }
+                            
+                            // Movie Source Buttons
+                            HStack(spacing: 20) {
+                                sourceButton(title: "Cinema", systemImage: "film", action: { showCinemaView = true })
+                                sourceButton(title: "Platform", systemImage: "tv", action: { showPlatformView = true })
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // Recent Movies Section
+                            recentMoviesView
                         }
-                        
-                        // Movie Source Buttons
-                        HStack(spacing: 20) {
-                            sourceButton(title: "Cinema", systemImage: "film", action: { showCinemaView = true })
-                            sourceButton(title: "Platform", systemImage: "tv", action: { showPlatformView = true })
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Recent Movies Section
-                        recentMoviesView
-                        
-                        Spacer()
-                        
-                        // Sign Out Button
-                        Button(action: handleSignOut) {
-                            Text("Sign Out")
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.red.opacity(0.8))
-                                .cornerRadius(10)
-                        }
-                        .padding(.horizontal, 50)
-                        .padding(.bottom, 20)
+                        .padding(.vertical, 20)
                     }
+                    
+                    // Sign Out Button at the bottom
+                    Button(action: handleSignOut) {
+                        Text("Sign Out")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red.opacity(0.8))
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 50)
                     .padding(.vertical, 20)
                 }
             }
