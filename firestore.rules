@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Function to check if the user is admin (morabah@gmail.com)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'morabah@gmail.com';
+    }
+
+    // Function to validate movie document structure
+    function isValidMovie() {
+      let requiredFields = ['title', 'description', 'updatedAt', 'createdAt'];
+      let movie = request.resource.data;
+      
+      return movie.keys().hasAll(requiredFields) &&
+             movie.title is string && movie.title.size() > 0 &&
+             movie.description is string &&
+             movie.updatedAt is timestamp &&
+             movie.createdAt is timestamp;
+    }
+
+    match /movies/{movieId} {
+      // Allow read operations (get and list) for authenticated users
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated();
+      
+      // Allow create/update only for admin with valid movie data
+      allow create: if isAdmin() && 
+                      isValidMovie() && 
+                      request.resource.data.createdAt == request.time;
+                      
+      allow update: if isAdmin() && 
+                      isValidMovie() && 
+                      request.resource.data.updatedAt == request.time &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Allow delete only for admin
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -1,14 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
     <style>
-        body { margin: 0; }
-        #player { width: 100%; height: 100%; }
+        body { 
+            margin: 0;
+            background-color: black;
+        }
+        #player { 
+            width: 100%; 
+            height: 100%;
+            background-color: black;
+        }
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont;
+        }
     </style>
 </head>
 <body>
-    <div id="player"></div>
+    <div class="player-wrapper">
+        <div id="player"></div>
+        <div id="loading-overlay">Loading...</div>
+    </div>
     
     <script>
         // Load YouTube IFrame API
@@ -18,6 +47,12 @@
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         
         var player;
+        var loadingOverlay;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadingOverlay = document.getElementById('loading-overlay');
+        });
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 height: '100%',
@@ -26,24 +61,81 @@
                     'playsinline': 1,
                     'controls': 1,
                     'enablejsapi': 1,
-                    'rel': 0
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'cc_load_policy': 1,
+                    'hl': 'en',
+                    'fs': 1,
+                    'color': 'white',
+                    'iv_load_policy': 3
                 },
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError,
+                    'onPlaybackQualityChange': onPlaybackQualityChange,
+                    'onPlaybackRateChange': onPlaybackRateChange
                 }
             });
         }
         
         function onPlayerReady(event) {
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
             // Notify Swift that player is ready
             window.webkit.messageHandlers.playerReady.postMessage(true);
+            
+            // Get available playback rates and qualities
+            var availablePlaybackRates = player.getAvailablePlaybackRates();
+            var availableQualities = player.getAvailableQualityLevels();
+            
+            // Send to Swift
+            window.webkit.messageHandlers.playerConfig.postMessage({
+                playbackRates: availablePlaybackRates,
+                qualities: availableQualities
+            });
         }
         
         function onPlayerStateChange(event) {
             // Notify Swift about state changes
-            window.webkit.messageHandlers.playerStateChange.postMessage(event.data);
+            window.webkit.messageHandlers.playerStateChange.postMessage({
+                state: event.data,
+                currentTime: player.getCurrentTime(),
+                duration: player.getDuration(),
+                videoUrl: player.getVideoUrl(),
+                videoData: player.getVideoData()
+            });
         }
+        
+        function onPlayerError(event) {
+            window.webkit.messageHandlers.playerError.postMessage({
+                error: event.data,
+                videoId: player.getVideoData().video_id
+            });
+        }
+        
+        function onPlaybackQualityChange(event) {
+            window.webkit.messageHandlers.qualityChange.postMessage({
+                quality: event.data,
+                availableQualities: player.getAvailableQualityLevels()
+            });
+        }
+        
+        function onPlaybackRateChange(event) {
+            window.webkit.messageHandlers.rateChange.postMessage({
+                rate: event.data,
+                availableRates: player.getAvailablePlaybackRates()
+            });
+        }
+        
+        // Error handling for script loading
+        tag.onerror = function() {
+            window.webkit.messageHandlers.playerError.postMessage({
+                error: 'Failed to load YouTube IFrame API',
+                videoId: null
+            });
+        };
     </script>
 </body>
 </html>

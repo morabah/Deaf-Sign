@@ -83,11 +83,6 @@ struct TimelineCaptureView: View {
                         YouTubePlayerView(
                             videoID: videoID,
                             webViewStore: webViewStore,
-                            currentVideoTime: $currentVideoTime,
-                            isPlayerReady: $isPlayerReady,
-                            playerState: $playerState,
-                            playbackQuality: $playbackQuality,
-                            playbackRate: $playbackRate,
                             playerVars: [
                                 "playsinline": 1,
                                 "controls": 1,
@@ -95,11 +90,12 @@ struct TimelineCaptureView: View {
                                 "fs": 1,
                                 "modestbranding": 1,
                                 "enablejsapi": 1
-                            ]
-                        ) { error in
-                            errorMessage = error
-                            showError = true
-                        }
+                            ],
+                            onError: { error in
+                                errorMessage = error
+                                showError = true
+                            }
+                        )
                         .frame(height: geometry.size.width * 9/16)
                         .background(Color.black)
                     }
@@ -511,10 +507,12 @@ struct TimelineCaptureView: View {
             }
         }
         
-        // Start a new timer for continuous updates
-        processingTimer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { timer in
+        // Create a timer to process time updates
+        let timer = Timer(timeInterval: updateInterval, repeats: true) { _ in
             updateCurrentTime()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        processingTimer = timer
     }
     
     private func updateCurrentTime() {
@@ -572,11 +570,6 @@ struct TimelineCaptureView: View {
                 youtubeView = YouTubePlayerView(
                     videoID: videoID,
                     webViewStore: webViewStore,
-                    currentVideoTime: $currentVideoTime,
-                    isPlayerReady: $isPlayerReady,
-                    playerState: $playerState,
-                    playbackQuality: $playbackQuality,
-                    playbackRate: $playbackRate,
                     playerVars: [
                         "playsinline": 1,
                         "controls": 1,
@@ -584,11 +577,12 @@ struct TimelineCaptureView: View {
                         "fs": 1,
                         "modestbranding": 1,
                         "enablejsapi": 1
-                    ]
-                ) { error in
-                    errorMessage = error
-                    showError = true
-                }
+                    ],
+                    onError: { error in
+                        errorMessage = error
+                        showError = true
+                    }
+                )
             }
         }
     }

@@ -1,0 +1,51 @@
+Search all code base and strictly follow  the below  General Instructions  one by one for Code Changes that you will make across project files . 
+
+Preparation and Understanding
+	1.	Understand Component Requirements:
+	•	Review the required parameters and expected callbacks of all components or interfaces.
+	2.	Map Changes to Requirements:
+	•	Verify if the current implementation aligns with the component’s requirements.
+	•	Identify mismatches between the parameters or callbacks provided and expected.
+
+	3.	Integration:
+	•	Ensure changes integrate smoothly with existing project files, maintaining compatibility across all modules and components.
+	4.	Avoid Duplications:
+	•	Reuse existing classes, structs, functions, or definitions instead of duplicating them.
+	5.	Access Levels:
+	•	Use proper access control (public, private, etc.) to restrict visibility based on scope and avoid unnecessary exposure.
+	6.	Fix Mutability Issues:
+	•	Address any issues related to immutability to ensure thread safety and efficient data handling.
+	7.	No Deprecated Code:
+	•	Avoid deprecated APIs; use up-to-date alternatives.
+	8.	Use Latest APIs:
+	•	Leverage the latest iOS 17 APIs for optimized performance and features.
+
+Error Handling and Logging
+	9.	Logging and Error Handling:
+	•	Implement meaningful error messages and robust error handling.
+	•	Add logging for debugging and tracking, ensuring sensitive information is not exposed.
+	10.	Remove Unnecessary Code:
+	•	Eliminate unnecessary do-catch blocks and other redundant code segments.
+
+UX/UI Consistency
+	11.	Preserve UX/UI:
+	•	Maintain consistency in the app’s user experience and interface without altering design or behavior.
+
+Code Refinement
+	12.	Rename for Clarity:
+	•	Ensure all methods and variables have descriptive names that align with their function.
+	13.	Refactoring References:
+	•	If renaming functions, classes, or structs, update all references throughout the project.
+
+Specific Updates for iOS 17
+	14.	Update Deprecated Syntax:
+	•	Update all deprecated onChange(of:perform:) calls to use the new iOS 17 syntax with two parameters and the initial parameter.
+	15.	Remove Incorrect Bindings:
+	•	Remove any incorrect binding parameters to ensure proper functionality.
+
+Testing and Validation
+	16.	Imports:
+	•	Include all necessary imports to avoid build errors and ensure functionality.
+	17.	Test Flow Alignment:
+	•	Confirm that the data flow matches the expected operation of the components.
+18		Removed the private access level from the all types that need to be accessible at file scope

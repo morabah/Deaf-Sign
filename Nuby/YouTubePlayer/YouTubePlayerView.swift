@@ -1,16 +1,27 @@
 import SwiftUI
 import WebKit
 import os.log
+import Combine
+
+// MARK: - YouTube Player State
+class YouTubePlayerState: ObservableObject {
+    @Published var currentTime: TimeInterval = 0
+    @Published var duration: TimeInterval = 0
+    @Published var isReady: Bool = false
+    @Published var playerState: Int = -1
+    @Published var playbackQuality: String = "default"
+    @Published var playbackRate: Double = 1.0
+    @Published var availableQualities: [String] = []
+    @Published var availablePlaybackRates: [Double] = []
+    @Published var error: String?
+    @Published var videoData: [String: Any] = [:]
+}
 
 struct YouTubePlayerView: UIViewRepresentable {
     // MARK: - Properties
     let videoID: String
     @ObservedObject var webViewStore: WebViewStore
-    @Binding var currentVideoTime: TimeInterval
-    @Binding var isPlayerReady: Bool
-    @Binding var playerState: Int
-    @Binding var playbackQuality: String
-    @Binding var playbackRate: Double
+    @StateObject private var state = YouTubePlayerState()
     let onError: (String) -> Void
     
     // Configuration options
@@ -21,22 +32,12 @@ struct YouTubePlayerView: UIViewRepresentable {
     // MARK: - Initialization
     init(videoID: String,
          webViewStore: WebViewStore,
-         currentVideoTime: Binding<TimeInterval>,
-         isPlayerReady: Binding<Bool>,
-         playerState: Binding<Int> = .constant(0),
-         playbackQuality: Binding<String> = .constant("default"),
-         playbackRate: Binding<Double> = .constant(1.0),
          playerVars: [String: Any] = [:],
          height: CGFloat = 300,
          width: CGFloat = .infinity,
          onError: @escaping (String) -> Void) {
         self.videoID = videoID
         self.webViewStore = webViewStore
-        self._currentVideoTime = currentVideoTime
-        self._isPlayerReady = isPlayerReady
-        self._playerState = playerState
-        self._playbackQuality = playbackQuality
-        self._playbackRate = playbackRate
         self.playerVars = playerVars
         self.height = height
         self.width = width
@@ -61,15 +62,16 @@ struct YouTubePlayerView: UIViewRepresentable {
         // Add content controller
         let contentController = WKUserContentController()
         contentController.add(context.coordinator, name: "youtubePlayer")
+        contentController.add(context.coordinator, name: "playerReady")
+        contentController.add(context.coordinator, name: "playerStateChange")
+        contentController.add(context.coordinator, name: "playerError")
+        contentController.add(context.coordinator, name: "playerConfig")
+        contentController.add(context.coordinator, name: "qualityChange")
+        contentController.add(context.coordinator, name: "rateChange")
         configuration.userContentController = contentController
         
-        // Create and configure WebView
+        // Create and configure WebView using WebViewStore
         let webView = webViewStore.createWebView(with: configuration, coordinator: context.coordinator)
-        webView.navigationDelegate = context.coordinator
-        webView.scrollView.isScrollEnabled = false
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.backgroundColor = .clear
         
         // Load player
         loadYouTubePlayer(webView)
@@ -89,14 +91,31 @@ struct YouTubePlayerView: UIViewRepresentable {
         webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
     }
     
+    // MARK: - Player Control Methods
+    func play(_ webView: WKWebView) {
+        webView.evaluateJavaScript("player.playVideo();")
+    }
+    
+    func pause(_ webView: WKWebView) {
+        webView.evaluateJavaScript("player.pauseVideo();")
+    }
+    
+    func seekTo(_ webView: WKWebView, time: TimeInterval, allowSeekAhead: Bool = true) {
+        webView.evaluateJavaScript("player.seekTo(\(time), \(allowSeekAhead));")
+    }
+    
+    func setPlaybackRate(_ webView: WKWebView, rate: Double) {
+        webView.evaluateJavaScript("player.setPlaybackRate(\(rate));")
+    }
+    
+    func setPlaybackQuality(_ webView: WKWebView, quality: String) {
+        webView.evaluateJavaScript("player.setPlaybackQuality('\(quality)');")
+    }
+    
     // MARK: - Coordinator
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: YouTubePlayerView
         var currentVideoID: String
-        var lastKnownTime: TimeInterval = 0
-        var lastKnownPlaybackRate: Double = 1.0
-        var pendingSeek: TimeInterval?
-        var isInitialLoad = true
         
         init(parent: YouTubePlayerView) {
             self.parent = parent
@@ -104,104 +123,86 @@ struct YouTubePlayerView: UIViewRepresentable {
             super.init()
         }
         
-        // MARK: - WKNavigationDelegate
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Logger.log("WebView finished loading", level: .debug)
-        }
-        
         // MARK: - WKScriptMessageHandler
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard let messageString = message.body as? String,
-                  let data = messageString.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                  let event = json["event"] as? String else {
-                return
-            }
+            guard let body = message.body as? [String: Any] else { return }
             
             DispatchQueue.main.async { [weak self] in
-                switch event {
-                case "ready":
-                    self?.handleReadyEvent(json)
-                case "stateChange":
-                    self?.handleStateChangeEvent(json)
-                case "timeUpdate":
-                    self?.handleTimeUpdateEvent(json)
-                case "playbackQualityChange":
-                    self?.handleQualityChangeEvent(json)
-                case "playbackRateChange":
-                    self?.handleRateChangeEvent(json)
-                case "error":
-                    self?.handleErrorEvent(json)
+                guard let self = self else { return }
+                
+                switch message.name {
+                case "playerReady":
+                    self.parent.state.isReady = true
+                    
+                case "playerStateChange":
+                    if let state = body["state"] as? Int {
+                        self.parent.state.playerState = state
+                    }
+                    if let currentTime = body["currentTime"] as? TimeInterval {
+                        self.parent.state.currentTime = currentTime
+                    }
+                    if let duration = body["duration"] as? TimeInterval {
+                        self.parent.state.duration = duration
+                    }
+                    if let videoData = body["videoData"] as? [String: Any] {
+                        self.parent.state.videoData = videoData
+                    }
+                    
+                case "playerError":
+                    if let error = body["error"] as? Int {
+                        let errorMessage: String
+                        switch error {
+                        case 2: errorMessage = "Invalid video ID"
+                        case 5: errorMessage = "HTML5 player error"
+                        case 100: errorMessage = "Video not found"
+                        case 101, 150: errorMessage = "Video playback not allowed"
+                        default: errorMessage = "Unknown error (\(error))"
+                        }
+                        self.parent.state.error = errorMessage
+                        self.parent.onError(errorMessage)
+                    }
+                    
+                case "playerConfig":
+                    if let rates = body["playbackRates"] as? [Double] {
+                        self.parent.state.availablePlaybackRates = rates
+                    }
+                    if let qualities = body["qualities"] as? [String] {
+                        self.parent.state.availableQualities = qualities
+                    }
+                    
+                case "qualityChange":
+                    if let quality = body["quality"] as? String {
+                        self.parent.state.playbackQuality = quality
+                    }
+                    if let qualities = body["availableQualities"] as? [String] {
+                        self.parent.state.availableQualities = qualities
+                    }
+                    
+                case "rateChange":
+                    if let rate = body["rate"] as? Double {
+                        self.parent.state.playbackRate = rate
+                    }
+                    if let rates = body["availableRates"] as? [Double] {
+                        self.parent.state.availablePlaybackRates = rates
+                    }
+                    
                 default:
                     break
                 }
             }
         }
         
-        // MARK: - Event Handlers
-        private func handleReadyEvent(_ json: [String: Any]) {
-            parent.isPlayerReady = true
+        // MARK: - WKNavigationDelegate
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            let errorMessage = "Navigation failed: \(error.localizedDescription)"
+            parent.state.error = errorMessage
+            parent.onError(errorMessage)
         }
         
-        private func handleStateChangeEvent(_ json: [String: Any]) {
-            if let state = json["state"] as? Int {
-                parent.playerState = state
-            }
-        }
-        
-        private func handleTimeUpdateEvent(_ json: [String: Any]) {
-            if let time = json["time"] as? TimeInterval {
-                lastKnownTime = time
-                parent.currentVideoTime = time
-            }
-        }
-        
-        private func handleQualityChangeEvent(_ json: [String: Any]) {
-            if let quality = json["quality"] as? String {
-                parent.playbackQuality = quality
-            }
-        }
-        
-        private func handleRateChangeEvent(_ json: [String: Any]) {
-            if let rate = json["rate"] as? Double {
-                parent.playbackRate = rate
-            }
-        }
-        
-        private func handleErrorEvent(_ json: [String: Any]) {
-            if let error = json["error"] as? String {
-                parent.onError(error)
-            }
-        }
-        
-        // MARK: - Player Controls
-        func play(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "playVideo()")
-        }
-        
-        func pause(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "pauseVideo()")
-        }
-        
-        func stop(_ webView: WKWebView) {
-            evaluatePlayerCommand(webView, command: "stopVideo()")
-        }
-        
-        func seek(_ webView: WKWebView, to seconds: TimeInterval) {
-            evaluatePlayerCommand(webView, command: "seekTo(\(seconds), true)")
-        }
-        
-        func setPlaybackRate(_ webView: WKWebView, rate: Double) {
-            evaluatePlayerCommand(webView, command: "setPlaybackRate(\(rate))")
-        }
-        
-        private func evaluatePlayerCommand(_ webView: WKWebView, command: String) {
-            let javascript = "player.\(command);"
-            webView.evaluateJavaScript(javascript) { [weak self] result, error in
-                if let error = error {
-                    self?.parent.onError("Error executing \(command): \(error.localizedDescription)")
-                }
-            }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            let errorMessage = "Navigation failed: \(error.localizedDescription)"
+            parent.state.error = errorMessage
+            parent.onError(errorMessage)
         }
     }
 }
